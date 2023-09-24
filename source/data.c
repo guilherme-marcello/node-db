@@ -23,18 +23,18 @@ int data_cleanup(struct data_t *data) {
         data == NULL,
         "data_cleanup",
         ERROR_DESTROY_DATA
-    )) return ERROR;
+    )) return M_ERROR;
 
     destroy_dynamic_memory(data->data);  
-    return OK;
+    return M_OK;
 }
 
 int data_destroy(struct data_t *data) {
-    if (data_cleanup(data) == ERROR)
-        return ERROR;
+    if (data_cleanup(data) == M_ERROR)
+        return M_ERROR;
 
     destroy_dynamic_memory(data);
-    return OK;
+    return M_OK;
 }
 
 struct data_t *data_dup(struct data_t *data) {
@@ -56,10 +56,10 @@ struct data_t *data_dup(struct data_t *data) {
 }
 
 int data_replace(struct data_t *data, int new_size, void *new_data) {
-    if (data_cleanup(data) == ERROR)
-        return ERROR;
+    if (data_cleanup(data) == M_ERROR)
+        return M_ERROR;
     
     data->data = new_data;
     data->datasize = new_size;
-    return OK;
+    return M_OK;
 }

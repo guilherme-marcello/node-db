@@ -2,8 +2,8 @@
 #define _MAIN_PRIVATE_H
 
 enum MemoryOperationStatus {
-    OK = 0,
-    ERROR = -1
+    M_OK = 0,
+    M_ERROR = -1
 };
 
 /* Função que liberta uma zona de memória dada pelo apontador, se este nao for nulo
