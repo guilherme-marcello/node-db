@@ -6,6 +6,20 @@ enum MemoryOperationStatus {
     M_ERROR = -1
 };
 
+enum ComparisonStatus {
+    EQUAL = 0,
+    LOWER = -1,
+    GREATER = 1,
+    CMP_ERROR = -2
+};
+
+/* Função que compara duas strings e retorna a ordem das mesmas, sendo esta
+ * ordem definida pela ordem alfabética do primeiro caractere não-igual.
+ * Retorna 0 se as strings forem iguais, -1 se str1 < str2,
+ * 1 se str1 > str2 ou -2 em caso de erro.
+ */
+enum ComparisonStatus string_compare(char* str1, char* str2);
+
 /* Função que liberta uma zona de memória dada pelo apontador, se este nao for nulo
 */
 void safe_free(void* ptr);

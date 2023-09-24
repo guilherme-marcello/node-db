@@ -4,6 +4,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+enum ComparisonStatus string_compare(char* str1, char* str2) {
+    if (str1 == NULL || str2 == NULL)
+        return CMP_ERROR;
+    
+    int cmp_result = strcmp(str1, str2);
+    if (cmp_result < 0)
+        return LOWER;
+    else if (cmp_result > 0)
+        return GREATER;
+    return EQUAL;
+}
+
 // ====================================================================================================
 //                                        Memory Handling
 // ====================================================================================================
