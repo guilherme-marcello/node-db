@@ -5,19 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-void safe_free(void* ptr) {
-    if (ptr) free(ptr);
-}
-
-void* create_dynamic_memory(int size) {
-    return calloc(1, size);
-}
-
-void destroy_dynamic_memory(void* ptr) {
-    safe_free(ptr);
-}
-
 struct data_t *data_create(int size, void *data) {
     struct data_t* block = create_dynamic_memory(sizeof(struct data_t));
     if (assert_error(
