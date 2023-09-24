@@ -1,9 +1,24 @@
 #include "main-private.h"
 #include "data.h"
+#include "entry.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+char* create_dynamic_string(const char* str) {
+    if (str == NULL)
+        return NULL; 
+
+    char* new_str = (char*)malloc(strlen(str) + 1);
+    if (assert_error(
+        new_str == NULL,
+        "create_dynamic_string",
+        ERROR_MALLOC
+    )) return NULL;
+
+    strcpy(new_str, str);
+    return new_str;
+}
 
 enum ComparisonStatus string_compare(char* str1, char* str2) {
     if (str1 == NULL || str2 == NULL)
@@ -76,11 +91,41 @@ int main(int argc, char *argv[]) {
 
     *(int*)ptr = 15;
 
-    printf("original -> %d\n", *(int*)data->data);
-    printf("copied -> %d\n", *(int*)copied->data);
+    printf("[%p] data => [%p] data = %d, size = %d\n", data, data->data, *(int*)data->data, data->datasize);
+    printf("[%p] copied => [%p] data = %d, size = %d\n", copied, copied->data, *(int*)copied->data, copied->datasize);
 
-    data_destroy(data);
-    data_destroy(copied);
+    struct entry_t* entry1 = entry_create(
+        create_dynamic_string("hello"), data
+    );
+    struct entry_t* entry2 = entry_create(
+        create_dynamic_string("world"), copied
+    );
+
+    struct entry_t* copied_entry = entry_dup(entry1);
+
+    printf(
+        "[%p] entry1 => [%p] value = %d, [%p] key = %s\n",
+        entry1, entry1->value, *(int*)entry1->value->data, &entry1->key, entry1->key
+    );
+
+    printf(
+        "[%p] entry2 => [%p] value = %d, [%p] key = %s\n",
+        entry2, entry2->value, *(int*)entry2->value->data, &entry2->key, entry2->key
+    );
+
+    printf(
+        "[%p] copied_entry => [%p] value = %d, [%p] key = %s\n",
+        copied_entry, copied_entry->value, *(int*)copied_entry->value->data, &copied_entry->key, copied_entry->key
+    );
+
+
+    printf("Comparing entry1[%s] and entry2[%s] == %d\n", entry1->key, entry2->key, entry_compare(entry1, entry2));
+    printf("Comparing entry2[%s] and entry1[%s] == %d\n", entry2->key, entry1->key, entry_compare(entry2, entry1));
+    printf("Comparing entry1[%s] and copied_entry[%s] == %d\n", entry1->key, copied_entry->key, entry_compare(entry1, copied_entry));
+
+    entry_destroy(entry1);
+    entry_destroy(entry2);
+    entry_destroy(copied_entry);
 
     return 0;
 }
