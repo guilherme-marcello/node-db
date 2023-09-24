@@ -30,23 +30,10 @@ int data_destroy(struct data_t *data) {
     return OK;
 }
 
-
 struct data_t *data_dup(struct data_t *data) {
-    void* data_copy = create_dynamic_memory(data->datasize);
-    if (assert_error(
-        data_copy == NULL,
-        "data_dup",
-        ERROR_MALLOC
-    )) return NULL;
-
-    if (assert_error(
-        memcpy(data_copy, data->data, data->datasize) == NULL,
-        "data_dup",
-        ERROR_MEMCPY
-    )) {
-        destroy_dynamic_memory(data_copy);
+    void* data_copy = duplicate_memory(data->data, data->datasize, "data_dup");
+    if (data_copy == NULL)
         return NULL;
-    }
 
     struct data_t* duplicate = data_create(data->datasize, data_copy);
     if (assert_error(
@@ -60,7 +47,6 @@ struct data_t *data_dup(struct data_t *data) {
 
     return duplicate;
 }
-
 
 int data_replace(struct data_t *data, int new_size, void *new_data) {
     if (assert_error(
