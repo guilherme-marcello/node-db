@@ -18,7 +18,7 @@ struct data_t *data_create(int size, void *data) {
     return block;
 }
 
-int data_cleanup(struct data_t *data) {
+enum MemoryOperationStatus data_cleanup(struct data_t *data) {
     if (assert_error(
         data == NULL,
         "data_cleanup",
