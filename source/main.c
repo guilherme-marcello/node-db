@@ -2,7 +2,11 @@
 #include "data.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
+// ====================================================================================================
+//                                        Memory Handling
+// ====================================================================================================
 void safe_free(void* ptr) {
     if (ptr) free(ptr);
 }
@@ -14,6 +18,26 @@ void* create_dynamic_memory(int size) {
 void destroy_dynamic_memory(void* ptr) {
     safe_free(ptr);
 }
+
+void* duplicate_memory(void* from, int size, char* snippet_id) {
+    void* copy = create_dynamic_memory(size);
+    if (assert_error(
+        copy == NULL,
+        snippet_id,
+        ERROR_MALLOC
+    )) return NULL;
+
+    if (assert_error(
+        memcpy(copy, from, size) == NULL,
+        snippet_id,
+        ERROR_MEMCPY
+    )) {
+        destroy_dynamic_memory(copy);
+        return NULL;
+    }
+    return copy;
+}
+
 
 // ====================================================================================================
 //                                        Error Handling

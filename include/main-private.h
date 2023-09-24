@@ -20,6 +20,9 @@ void* create_dynamic_memory(int size);
 */
 void destroy_dynamic_memory(void* ptr);
 
+/* Função que copia size bytes da memoria apontada por from para uma nova zona de memoria */
+void* duplicate_memory(void* from, int size, char* snippet_id);
+
 /* Função que verifica se a condicao condition se verifica e,
 se for o caso, imprime a mensagem error_msg. 
 Indica na excecao o "snippet_id" associado ao erro.
