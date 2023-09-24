@@ -3,6 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void safe_free(void* ptr) {
+    if (ptr) free(ptr);
+}
+
+void* create_dynamic_memory(int size) {
+    return calloc(1, size);
+}
+
+void destroy_dynamic_memory(void* ptr) {
+    safe_free(ptr);
+}
+
 // ====================================================================================================
 //                                        Error Handling
 // ====================================================================================================
