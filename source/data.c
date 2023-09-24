@@ -18,14 +18,21 @@ struct data_t *data_create(int size, void *data) {
     return block;
 }
 
-int data_destroy(struct data_t *data) {
+int data_cleanup(struct data_t *data) {
     if (assert_error(
         data == NULL,
-        "data_destroy",
+        "data_cleanup",
         ERROR_DESTROY_DATA
     )) return ERROR;
 
-    destroy_dynamic_memory(data->data);
+    destroy_dynamic_memory(data->data);  
+    return OK;
+}
+
+int data_destroy(struct data_t *data) {
+    if (data_cleanup(data) == ERROR)
+        return ERROR;
+
     destroy_dynamic_memory(data);
     return OK;
 }
@@ -49,13 +56,8 @@ struct data_t *data_dup(struct data_t *data) {
 }
 
 int data_replace(struct data_t *data, int new_size, void *new_data) {
-    if (assert_error(
-        data == NULL,
-        "data_replace",
-        ERROR_DESTROY_DATA
-    )) return ERROR;
-
-    destroy_dynamic_memory(data->data);
+    if (data_cleanup(data) == ERROR)
+        return ERROR;
     
     data->data = new_data;
     data->datasize = new_size;

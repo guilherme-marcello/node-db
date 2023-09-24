@@ -1,6 +1,11 @@
 #ifndef _DATA_PRIVATE_H
 #define _DATA_PRIVATE_H
 
+/* Função que liberta a memória alocada pelos conteúdos da estrutura data_t.
+ * Retorna 0 (OK) ou -1 (ERROR) em caso de erro.
+ */
+int data_cleanup(struct data_t *data);
+
 // ====================================================================================================
 //                                          ERROR HANDLING
 // ====================================================================================================
