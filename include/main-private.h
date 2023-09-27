@@ -53,5 +53,7 @@ int assert_error(int condition, char* snippet_id, char* error_msg);
 // Error messages
 #define ERROR_MALLOC "\033[0;31m[!] Error:\033[0m Failed to allocate dynamic memory.\n"
 #define ERROR_MEMCPY "\033[0;31m[!] Error:\033[0m Memcpy operation failed.\n"
+#define ERROR_SIZE "\033[0;31m[!] Error:\033[0m Size must be a positive integer.\n"
+#define ERROR_NULL_POINTER_REFERENCE "\033[0;31m[!] Error:\033[0m Null pointer reference.\n"
 
 #endif
