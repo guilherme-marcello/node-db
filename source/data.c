@@ -6,6 +6,18 @@
 #include <string.h>
 
 struct data_t *data_create(int size, void *data) {
+    if (assert_error(
+        size <= 0,
+        "data_create",
+        ERROR_SIZE
+    )) return NULL;
+
+    if (assert_error(
+        data == NULL,
+        "data_create",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
     struct data_t* block = create_dynamic_memory(sizeof(struct data_t));
     if (assert_error(
         block == NULL,
@@ -22,7 +34,7 @@ enum MemoryOperationStatus data_cleanup(struct data_t *data) {
     if (assert_error(
         data == NULL,
         "data_cleanup",
-        ERROR_DESTROY_DATA
+        ERROR_NULL_POINTER_REFERENCE
     )) return M_ERROR;
 
     destroy_dynamic_memory(data->data);  
@@ -38,6 +50,12 @@ int data_destroy(struct data_t *data) {
 }
 
 struct data_t *data_dup(struct data_t *data) {
+    if (assert_error(
+        data == NULL,
+        "data_dup",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
     void* data_copy = duplicate_memory(data->data, data->datasize, "data_dup");
     if (data_copy == NULL)
         return NULL;
