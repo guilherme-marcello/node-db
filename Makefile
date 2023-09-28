@@ -1,6 +1,3 @@
-# Program info
-PROGRAM_NAME := main.out
-
 # Directories
 SRCDIR  := source
 INCDIR  := include
@@ -10,26 +7,30 @@ OBJDIR  := object
 # Compiler and linker options
 CC      := gcc
 CFLAGS  := -Wall -O3 -g -I ./$(INCDIR)
-LDFLAGS=-lrt -lpthread
+LDFLAGS	:=
 
 
-# Source files
+# Source files (all)
 SRCS    := $(wildcard $(SRCDIR)/*.c)
 OBJS    := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))
 
-# Binary target
-TARGET  := $(BINDIR)/$(PROGRAM_NAME)
+# Source files excluding those starting with "test_"
+SRCS_NO_TEST := $(filter-out $(SRCDIR)/test_%.c, $(SRCS))
+OBJS_NO_TEST := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS_NO_TEST))
+
+# Target binaries of tests
+TEST_TARGETS := $(patsubst $(SRCDIR)/test_%.c, $(BINDIR)/test_%.out, $(SRCS))
 
 # Rules
 .PHONY: all clean
 
-all: $(TARGET)
+all: $(OBJS) $(TEST_TARGETS)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) 
+$(BINDIR)/test_%.out: $(OBJDIR)/test_%.o $(OBJS_NO_TEST)
+	$(CC) $< $(OBJS_NO_TEST) -o $@ $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf $(BINDIR)/*
