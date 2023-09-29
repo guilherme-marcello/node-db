@@ -6,6 +6,12 @@
 #include <string.h>
 
 struct entry_t *entry_create(char *key, struct data_t *data) {
+    if (assert_error(
+        key == NULL || data == NULL,
+        "entry_create",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
     struct entry_t* entry = create_dynamic_memory(sizeof(struct entry_t));
     if (assert_error(
         entry == NULL,
@@ -20,9 +26,9 @@ struct entry_t *entry_create(char *key, struct data_t *data) {
 
 enum MemoryOperationStatus entry_cleanup(struct entry_t* entry) {
     if (assert_error(
-        entry == NULL,
+        entry == NULL || entry->key == NULL || entry->value == NULL,
         "entry_cleanup",
-        ERROR_DESTROY_ENTRY
+        ERROR_NULL_POINTER_REFERENCE
     )) return M_ERROR;
 
     destroy_dynamic_memory(entry->key);
@@ -45,6 +51,12 @@ int entry_destroy(struct entry_t *entry) {
 }
 
 struct entry_t *entry_dup(struct entry_t *entry) {
+    if (assert_error(
+        entry == NULL,
+        "entry_dup",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
     char* key_copy = duplicate_memory(entry->key, strlen(entry->key), "entry_dup");
     if (key_copy == NULL)
         return NULL;
@@ -70,6 +82,12 @@ struct entry_t *entry_dup(struct entry_t *entry) {
 }
 
 int entry_replace(struct entry_t *entry, char *new_key, struct data_t *new_value) {
+    if (assert_error(
+        new_key == NULL || new_value == NULL,
+        "entry_replace",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return M_ERROR;
+
     if (entry_cleanup(entry) == M_ERROR)
         return M_ERROR;
 
