@@ -1,6 +1,6 @@
 #include "entry.h"
 #include "entry-private.h"
-#include "main-private.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <string.h>
