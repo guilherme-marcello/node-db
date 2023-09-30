@@ -57,7 +57,7 @@ struct entry_t *entry_dup(struct entry_t *entry) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
-    char* key_copy = duplicate_memory(entry->key, strlen(entry->key), "entry_dup");
+    char* key_copy = duplicate_memory(entry->key, strlen(entry->key) + 1, "entry_dup");
     if (key_copy == NULL)
         return NULL;
 
