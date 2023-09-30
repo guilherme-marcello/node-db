@@ -12,6 +12,12 @@ struct data_t *data_create(int size, void *data) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
+    if (assert_error(
+        size <= 0,
+        "data_create",
+        ERROR_SIZE
+    )) return NULL;
+
     struct data_t* block = create_dynamic_memory(sizeof(struct data_t));
     if (assert_error(
         block == NULL,
