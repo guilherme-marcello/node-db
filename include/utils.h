@@ -13,6 +13,18 @@ enum ComparisonStatus {
     CMP_ERROR = -2
 };
 
+enum AddOperationStatus {
+    ADDED = 0,
+    REPLACED = -1,
+    ADD_ERROR = -1
+};
+
+enum RemoveOperationStatus {
+    REMOVED = 0,
+    NOT_FOUND = 1,
+    REMOVE_ERROR = -1 
+};
+
 /* Função que cria e retorna uma string alocada dinamicamente.
 */
 char* create_dynamic_string(const char* str);
@@ -53,6 +65,7 @@ int assert_error(int condition, char* snippet_id, char* error_msg);
 // Error messages
 #define ERROR_MALLOC "\033[0;31m[!] Error:\033[0m Failed to allocate dynamic memory.\n"
 #define ERROR_MEMCPY "\033[0;31m[!] Error:\033[0m Memcpy operation failed.\n"
+#define ERROR_STRDUP "\033[0;31m[!] Error:\033[0m Srtdup operation failed.\n"
 #define ERROR_SIZE "\033[0;31m[!] Error:\033[0m Size must be a positive integer.\n"
 #define ERROR_NULL_POINTER_REFERENCE "\033[0;31m[!] Error:\033[0m Null pointer reference.\n"
 
