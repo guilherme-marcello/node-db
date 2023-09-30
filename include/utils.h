@@ -15,7 +15,7 @@ enum ComparisonStatus {
 
 enum AddOperationStatus {
     ADDED = 0,
-    REPLACED = -1,
+    REPLACED = 1,
     ADD_ERROR = -1
 };
 
