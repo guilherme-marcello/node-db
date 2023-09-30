@@ -7,12 +7,6 @@
 
 struct data_t *data_create(int size, void *data) {
     if (assert_error(
-        size <= 0,
-        "data_create",
-        ERROR_SIZE
-    )) return NULL;
-
-    if (assert_error(
         data == NULL,
         "data_create",
         ERROR_NULL_POINTER_REFERENCE

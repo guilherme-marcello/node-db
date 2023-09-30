@@ -40,6 +40,11 @@ void safe_free(void* ptr) {
 }
 
 void* create_dynamic_memory(int size) {
+    if (assert_error(
+        size <= 0,
+        "create_dynamic_memory",
+        ERROR_SIZE
+    )) return NULL;
     return calloc(1, size);
 }
 
@@ -52,12 +57,6 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
         from == NULL,
         snippet_id,
         ERROR_NULL_POINTER_REFERENCE
-    )) return NULL;
-
-    if (assert_error(
-        size <= 0,
-        snippet_id,
-        ERROR_SIZE
     )) return NULL;
 
     void* copy = create_dynamic_memory(size);
