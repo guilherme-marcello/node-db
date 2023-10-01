@@ -30,8 +30,13 @@ enum MemoryOperationStatus node_destroy(struct node_t *node) {
         "node_destroy",
         ERROR_NULL_POINTER_REFERENCE
     )) return M_ERROR;
+
+    if (entry_destroy(node->entry) == M_ERROR)
+        return M_ERROR;
+
+    destroy_dynamic_memory(node);
     
-    return entry_destroy(node->entry);
+    return M_OK;
 }
 
 struct list_t* list_create() {
@@ -56,10 +61,12 @@ int list_destroy(struct list_t *list) {
 
     struct node_t* node;
     while ((node = list->head)) {
+        list->head = node->next;
         if (node_destroy(node) == M_ERROR)
             return M_ERROR;
-        list->head = node->next;
+
     }
+    destroy_dynamic_memory(list);
     return M_OK;   
 }
 
@@ -103,8 +110,9 @@ enum AddOperationStatus insert_node_in_ordered_list_aux(struct list_t* list, str
 
     switch (entry_compare(node_current->entry, node->entry)) {
         case EQUAL:
+            struct entry_t* replaced_entry = node_current->entry;
             node_current->entry = node->entry;
-            return REPLACED;
+            return entry_destroy(replaced_entry) == M_OK ? REPLACED : ADD_ERROR;
         case LOWER:
             return insert_node_in_ordered_list_aux(list, node, node_current, node_current->next);
         case GREATER:
@@ -127,7 +135,7 @@ enum AddOperationStatus insert_node_in_ordered_list(struct list_t* list, struct 
 
 int list_add(struct list_t *list, struct entry_t *entry) {
     if (assert_error(
-        list == NULL,
+        list == NULL || entry == NULL,
         "list_add",
         ERROR_NULL_POINTER_REFERENCE
     )) return ADD_ERROR;
@@ -160,11 +168,16 @@ enum RemoveOperationStatus list_remove_aux(struct list_t *list, struct node_t* n
 
     switch (string_compare(node_current->entry->key, key)) {
         case EQUAL:
-            if (node_prev == NULL)
-                list->head = node_current->next;
-            else
-                node_prev->next = node_current->next;
+            struct node_t* node_current_next = node_current->next;
+            if (node_destroy(node_current) == M_ERROR)
+                return CMP_ERROR;
+
             list->size--;
+            if (node_prev == NULL)
+                list->head = node_current_next;
+            else
+                node_prev->next = node_current_next;
+
             return REMOVED; 
         case GREATER:
             return NOT_FOUND;
