@@ -24,6 +24,35 @@ struct entry_t *entry_create(char *key, struct data_t *data) {
     return entry;
 }
 
+struct entry_t* entry_copy_create(char *key, struct data_t* data) {
+    if (assert_error(
+        key == NULL || data == NULL,
+        "entry_copy_create",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    char* key_copy = strdup(key);
+    if (assert_error(
+        key_copy == NULL,
+        "entry_copy_create",
+        ERROR_STRDUP
+    )) return NULL;
+
+    struct data_t* data_copy = data_dup(data);
+    if (data == NULL) {
+        destroy_dynamic_memory(key_copy);
+        return NULL;
+    }
+
+    struct entry_t* entry = entry_create(key_copy, data_copy);
+    if (entry == NULL) {
+        destroy_dynamic_memory(key_copy);
+        data_destroy(data_copy);
+    }
+
+    return entry;
+}
+
 enum MemoryOperationStatus entry_cleanup(struct entry_t* entry) {
     if (assert_error(
         entry == NULL || entry->key == NULL || entry->value == NULL,
