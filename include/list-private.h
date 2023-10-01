@@ -30,8 +30,9 @@ enum MemoryOperationStatus node_destroy(struct node_t *node);
 //                                          ERROR HANDLING
 // ====================================================================================================
 // Error messages
-#define ERROR_CREATE_LIST "\033[0;31m[!] Error:\033[0m Failed to create list.\n"
-#define ERROR_DESTROY_LIST "\033[0;31m[!] Error:\033[0m Failed to destroy list.\n"
-#define ERROR_CREATE_NODE "\033[0;31m[!] Error:\033[0m Failed to create node.\n"
-#define ERROR_DESTROY_NIDE "\033[0;31m[!] Error:\033[0m Failed to destroy node.\n"
+#define ERROR_CREATE_LIST	"\033[0;31m[!] Error:\033[0m Failed to create list.\n"
+#define ERROR_DESTROY_LIST	"\033[0;31m[!] Error:\033[0m Failed to destroy list.\n"
+#define ERROR_EMPTY_LIST	"\033[0;31m[!] Error:\033[0m List is empty.\n"
+#define ERROR_CREATE_NODE	"\033[0;31m[!] Error:\033[0m Failed to create node.\n"
+#define ERROR_DESTROY_NIDE	"\033[0;31m[!] Error:\033[0m Failed to destroy node.\n"
 #endif

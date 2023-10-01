@@ -232,7 +232,7 @@ enum MemoryOperationStatus list_get_keys_aux(struct node_t* node, char** array, 
     }
 
     if (assert_error(
-        node->entry == NULL || node->entry->key,
+        node->entry == NULL || node->entry->key == NULL,
         "list_get_keys_aux",
         ERROR_NULL_POINTER_REFERENCE
     )) return M_ERROR;
@@ -253,7 +253,13 @@ char **list_get_keys(struct list_t *list) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
-    char** array = create_dynamic_memory((sizeof(char*) * list->size) + 1);
+    if (assert_error(
+        list->head == NULL,
+        "list_get_keys",
+        ERROR_EMPTY_LIST
+    )) return NULL;
+
+    char** array = create_dynamic_memory(sizeof(char*) * (list->size + 1));
     if (assert_error(
         array == NULL,
         "list_get_keys",
