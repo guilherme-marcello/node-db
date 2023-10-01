@@ -87,23 +87,6 @@ enum AddOperationStatus insert_node(struct list_t* list, struct node_t* node, st
     return ADDED;
 }
 
-int is_list_empty(struct list_t* list) {
-    return list == NULL || list->head == NULL || list->size == 0;
-}
-
-enum AddOperationStatus insert_to_head(struct list_t* list, struct node_t* node) {
-    if (assert_error(
-        list == NULL || node == NULL,
-        "insert_to_head",
-        ERROR_NULL_POINTER_REFERENCE
-    )) return ADD_ERROR;
-
-    struct node_t* head = list->head;
-    list->head = node;
-    node->next = head;
-    return ADDED;
-}
-
 enum AddOperationStatus insert_node_in_ordered_list_aux(struct list_t* list, struct node_t* node, struct node_t* node_prev, struct node_t* node_current) {
     if (node_current == NULL)
         return insert_node(list, node, node_prev, NULL);
