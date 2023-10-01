@@ -103,10 +103,7 @@ enum AddOperationStatus insert_node_in_ordered_list_aux(struct list_t* list, str
 
     switch (entry_compare(node_current->entry, node->entry)) {
         case EQUAL:
-            if (entry_replace(node_current->entry, node->entry->key, node->entry->value) == M_ERROR)
-                return ADD_ERROR;
-            destroy_dynamic_memory(node->entry);
-            destroy_dynamic_memory(node);
+            node_current->entry = node->entry;
             return REPLACED;
         case LOWER:
             return insert_node_in_ordered_list_aux(list, node, node_current, node_current->next);
@@ -142,12 +139,19 @@ int list_add(struct list_t *list, struct entry_t *entry) {
         ERROR_CREATE_NODE
     )) return ADD_ERROR;
 
-    if (insert_node_in_ordered_list(list, new_node) == ADD_ERROR) {
-        destroy_dynamic_memory(new_node);
-        return ADD_ERROR;
+    switch (insert_node_in_ordered_list(list, new_node)) {
+        case ADD_ERROR:
+            destroy_dynamic_memory(new_node->entry);
+            destroy_dynamic_memory(new_node);
+            return ADD_ERROR;
+        case REPLACED:
+            destroy_dynamic_memory(new_node);
+            return REPLACED;
+        case ADDED:
+            return ADDED;
+        default:
+            return ADD_ERROR;
     }
-
-    return ADDED;
 }
 
 enum RemoveOperationStatus list_remove_aux(struct list_t *list, struct node_t* node_prev, struct node_t* node_current, char* key) {
@@ -186,6 +190,7 @@ int list_remove(struct list_t *list, char *key) {
 struct entry_t *list_get_aux(struct node_t *node, char *key) {
     if (node == NULL || node->entry == NULL)
         return NULL;
+
     switch (string_compare(node->entry->key, key)) {
         case EQUAL:
             return node->entry;
