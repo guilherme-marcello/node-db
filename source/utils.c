@@ -50,6 +50,7 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
         ERROR_SIZE
     )) return NULL;
 
+    // allocate memory to the copy
     void* copy = create_dynamic_memory(size);
     if (assert_error(
         copy == NULL,
@@ -57,11 +58,13 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
         ERROR_MALLOC
     )) return NULL;
 
+    // perform mem copy
     if (assert_error(
         memcpy(copy, from, size) == NULL,
         snippet_id,
         ERROR_MEMCPY
     )) {
+        // destroy allocated memory to copy in case of error
         destroy_dynamic_memory(copy);
         return NULL;
     }
@@ -72,6 +75,7 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
 //                                        Error Handling
 // ====================================================================================================
 int assert_error(int condition, char* snippet_id, char* error_msg) {
+    // if condition is satisfied and verbose is set to true, print error
     if (condition && getenv("verbose"))
         fprintf(stderr, "[%s] %s", snippet_id, error_msg);
     return condition;
