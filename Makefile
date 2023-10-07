@@ -19,14 +19,14 @@ SRCS_NO_TEST := $(filter-out $(SRCDIR)/test_%.c, $(SRCS))
 OBJS_NO_TEST := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS_NO_TEST))
 
 # Target binaries of tests
-TEST_TARGETS := $(patsubst $(SRCDIR)/test_%.c, $(BINDIR)/test_%.out, $(SRCS))
+TEST_TARGETS := $(patsubst $(SRCDIR)/test_%.c, $(BINDIR)/test_%, $(SRCS))
 
 # Rules
 .PHONY: all clean
 
 all: $(OBJS) $(TEST_TARGETS)
 
-$(BINDIR)/test_%.out: $(OBJDIR)/test_%.o $(OBJS_NO_TEST)
+$(BINDIR)/test_%: $(OBJDIR)/test_%.o $(OBJS_NO_TEST)
 	$(CC) $< $(OBJS_NO_TEST) -o $@ $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
