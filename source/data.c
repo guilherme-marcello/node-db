@@ -88,7 +88,7 @@ int data_replace(struct data_t *data, int new_size, void *new_data) {
     if (data_cleanup(data) == M_ERROR)
         return M_ERROR;
 
-    // update struct fields with given pointers
+    // update struct fields with given pointer and size
     data->data = new_data;
     data->datasize = new_size;
     return M_OK;
