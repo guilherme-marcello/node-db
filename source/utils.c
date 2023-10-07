@@ -5,21 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* create_dynamic_string(const char* str) {
-    if (str == NULL)
-        return NULL; 
-
-    char* new_str = (char*)malloc(strlen(str) + 1);
-    if (assert_error(
-        new_str == NULL,
-        "create_dynamic_string",
-        ERROR_MALLOC
-    )) return NULL;
-
-    strcpy(new_str, str);
-    return new_str;
-}
-
 enum ComparisonStatus string_compare(char* str1, char* str2) {
     if (str1 == NULL || str2 == NULL)
         return CMP_ERROR;
