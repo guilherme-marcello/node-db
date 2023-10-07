@@ -44,6 +44,12 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
+    if (assert_error(
+        size <= 0,
+        snippet_id,
+        ERROR_SIZE
+    )) return NULL;
+
     void* copy = create_dynamic_memory(size);
     if (assert_error(
         copy == NULL,
@@ -62,12 +68,11 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
     return copy;
 }
 
-
 // ====================================================================================================
 //                                        Error Handling
 // ====================================================================================================
 int assert_error(int condition, char* snippet_id, char* error_msg) {
-    if (condition)
+    if (condition && getenv("verbose"))
         fprintf(stderr, "[%s] %s", snippet_id, error_msg);
     return condition;
 }
