@@ -5,10 +5,11 @@ BINDIR  := binary
 OBJDIR  := object
 LIBDIR	:= lib
 TESTDIR	:= tests
+PROTBUF	:= /usr/include/protobuf-c/
 
 # Compiler and linker options
 CC      := gcc
-CFLAGS  := -Wall -O3 -g -I ./$(INCDIR) -lprotobuf-c
+CFLAGS  := -Wall -O3 -g -I ./$(INCDIR) -I $(PROTBUF) -lprotobuf-c
 LDFLAGS	:=
 AR		:= ar
 ARFLAGS	:= rcs
