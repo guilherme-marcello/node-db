@@ -8,7 +8,7 @@ TESTDIR	:= tests
 
 # Compiler and linker options
 CC      := gcc
-CFLAGS  := -Wall -O3 -g -I ./$(INCDIR)
+CFLAGS  := -Wall -O3 -g -I ./$(INCDIR) -lprotobuf-c
 LDFLAGS	:=
 AR		:= ar
 ARFLAGS	:= rcs
@@ -47,7 +47,7 @@ $(LIBDIR)/libtable.a: $(OBJS_NO_MAIN)
 	$(AR) $(ARFLAGS) $@ $^
 
 
-all: libtable table-client table-server tests
+all: libtable table-server # table-client  tests
 
 $(BINDIR)/table-%: $(OBJDIR)/table_%.o $(LIBDIR)/libtable.a
 	$(CC) $< -o $@ -L$(LIBDIR) -ltable $(LDFLAGS)
