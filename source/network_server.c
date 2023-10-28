@@ -78,7 +78,7 @@ int close_and_return_failure(int fd) {
 
 
 int network_server_init(short port) {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (assert_error(
         fd < 0,
         "network_server_init",
