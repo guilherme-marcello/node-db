@@ -1,5 +1,6 @@
 #ifndef _MAIN_PRIVATE_H
 #define _MAIN_PRIVATE_H
+#include <unistd.h>
 
 enum MemoryOperationStatus {
     M_OK = 0,
@@ -54,6 +55,14 @@ se for o caso, imprime a mensagem error_msg.
 Indica na excecao o "snippet_id" associado ao erro.
 */
 int assert_error(int condition, char* snippet_id, char* error_msg);
+
+// ====================================================================================================
+//                                          NETWORK
+// ====================================================================================================
+
+ssize_t write_n_to_sock(int sock, const void *buf, size_t n);
+ssize_t read_n_from_sock(int sock, void *buf, size_t n);
+int close_and_return_failure(int fd);
 
 // ====================================================================================================
 //                                          ERROR HANDLING
