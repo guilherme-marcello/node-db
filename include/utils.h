@@ -2,6 +2,17 @@
 #define _MAIN_PRIVATE_H
 #include <unistd.h>
 
+enum CommandType {
+    PUT,
+    GET,
+    DEL,
+    SIZE,
+    GETKEYS,
+    GETTABLE,
+    QUIT,
+    INVALID
+};
+
 enum MemoryOperationStatus {
     M_OK = 0,
     M_ERROR = -1
