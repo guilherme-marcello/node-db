@@ -14,44 +14,34 @@ LDFLAGS	:=
 AR		:= ar
 ARFLAGS	:= rcs
 
-# Source files (all)
-SRCS    := $(wildcard $(SRCDIR)/*.c)
-OBJS    := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))
+SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c
+OBJ_GENERIC := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_GENERIC))
 
-# Source files excluding those starting with "test_"
-SRCS_NO_TEST := $(filter-out $(SRCDIR)/test_%.c, $(SRCS))
-# Source files excluding those starting with "table_" and "test_"
-SRCS_NO_MAIN := $(filter-out $(SRCDIR)/table_%.c, $(SRCS_NO_TEST))
+SRC_SERVER := $(SRCDIR)/network_server.c $(SRCDIR)/table_skel.c 
+OBJ_SERVER := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_SERVER))
 
-OBJS_NO_MAIN := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS_NO_MAIN))
+.PHONY: all clean libutils libtable table-server
 
-# Target binaries of tests
-TEST_TARGETS := $(patsubst $(SRCDIR)/test_%.c, $(TESTDIR)/test_%, $(SRCS))
+libutils: $(OBJDIR)/utils.o $(LIBDIR)/libutils.a
+libtable: libutils $(OBJ_GENERIC) $(LIBDIR)/libtable.a
+libserver: libtable $(OBJ_SERVER) $(LIBDIR)/libserver.a
+table-server: libserver $(BINDIR)/table-server
 
-# Target lib
-LIB_TARGET := $(LIBDIR)/libtable.a
-
-# Target binaries of server/client
-MAIN_TARGET_CLIENT := $(BINDIR)/table-client
-MAIN_TARGET_SERVER := $(BINDIR)/table-server
-
-
-# Rules
-.PHONY: all clean libtable table-client table-server tests
-
-libtable: $(OBJS) $(LIB_TARGET)
-tests: libtable $(TEST_TARGETS)
-table-client: libtable $(MAIN_TARGET_CLIENT)
-table-server: libtable $(MAIN_TARGET_SERVER)
-
-$(LIBDIR)/libtable.a: $(OBJS_NO_MAIN)
+$(LIBDIR)/libutils.a: $(OBJDIR)/utils.o
 	$(AR) $(ARFLAGS) $@ $^
 
+$(LIBDIR)/libtable.a: $(OBJ_GENERIC) 
+	$(AR) $(ARFLAGS) $@ $^ $(LIBDIR)/libutils.a
 
-all: libtable table-server # table-client  tests
+$(LIBDIR)/libserver.a: $(OBJ_SERVER)
+	$(AR) $(ARFLAGS) $@ $^ $(LIBDIR)/libtable.a $(LIBDIR)/libutils.a
 
-$(BINDIR)/table-%: $(OBJDIR)/table_%.o $(LIBDIR)/libtable.a
-	$(CC) $< -o $@ -L$(LIBDIR) -ltable $(LDFLAGS)
+
+all: table-server
+
+
+$(BINDIR)/table-server: $(OBJDIR)/table_server.o $(LIBDIR)/libserver.a
+	$(CC) $< -o $@ -L$(LIBDIR) -lserver -ltable -lutils  $(LDFLAGS)
 
 $(TESTDIR)/test_%: $(OBJDIR)/test_%.o $(LIBDIR)/libtable.a
 	$(CC) $< -o $@ -L$(LIBDIR) -ltable $(LDFLAGS)
@@ -63,3 +53,4 @@ clean:
 	rm -rf $(BINDIR)/*
 	rm -rf $(OBJDIR)/*
 	rm -rf $(LIBDIR)/*
+	rm -rf $(TESTDIR)/*
