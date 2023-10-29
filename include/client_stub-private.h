@@ -9,4 +9,8 @@ struct rtable_t {
     int sockfd;
 };
 
+struct rtable_t* rtable_create(char* address_port);
+
+int rtable_destroy(struct rtable_t *rtable);
+
 #endif
