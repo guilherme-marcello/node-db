@@ -36,21 +36,62 @@ MessageT* wrap_message(MessageT__Opcode opcode, MessageT__CType ctype) {
     return msg_wrapper;
 }
 
-struct data_t* unwrap_data_from_message(MessageT* msg) {
-    if (msg == NULL || msg->value.data == NULL)
+
+struct data_t* unwrap_data_from_entry(EntryT* entry) {
+    if (assert_error(
+        entry == NULL || entry->value.data == NULL,
+        "unwrap_data_from_message",
+        ERROR_MALLOC
+    )) return NULL;
+
+    // copy data field from message...
+    void* value = duplicate_memory(entry->value.data, entry->value.len, "unwrap_data");
+    if (assert_error(
+        value == NULL,
+        "unwrap_data_from_message",
+        "Failed to duplicate memory from message.\n"
+    )) return NULL;
+
+    // wrap in data_t..
+    struct data_t* data = data_create(entry->value.len, value);
+    if (assert_error(
+        data == NULL,
+        "unwrap_data_from_message",
+        "Failed to create data_t from data extracted from message.\n"
+    )) {
+        destroy_dynamic_memory(value);
         return NULL;
+    };
+
+    return data;
+}
+
+struct data_t* unwrap_data_from_message(MessageT* msg) {
+    if (assert_error(
+        msg == NULL || msg->value.data == NULL,
+        "unwrap_data_from_message",
+        ERROR_MALLOC
+    )) return NULL;
 
     // copy data field from message...
     void* value = duplicate_memory(msg->value.data, msg->value.len, "unwrap_data");
-    if (value == NULL)
-        return NULL;
+    if (assert_error(
+        value == NULL,
+        "unwrap_data_from_message",
+        "Failed to duplicate memory from message.\n"
+    )) return NULL;
 
     // wrap in data_t..
     struct data_t* data = data_create(msg->value.len, value);
-    if (data == NULL) {
+    if (assert_error(
+        data == NULL,
+        "unwrap_data_from_message",
+        "Failed to create data_t from data extracted from message.\n"
+    )) {
         destroy_dynamic_memory(value);
         return NULL;
-    }
+    };
+
     return data;
 }
 
