@@ -102,10 +102,25 @@ int get(MessageT* msg, struct table_t* table) {
 
 int del(MessageT* msg, struct table_t* table) {
     if (assert_error(
-        msg == NULL || table == NULL,
+        msg == NULL || table == NULL || msg->key == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    if (assert_error(
+        msg->c_type != MESSAGE_T__C_TYPE__CT_KEY,
+        "invoke",
+        "Invalid c_type.\n"
+    )) return -1;
+
+    if (assert_error(
+        table_remove(table, msg->key) == -1,
+        "invoke_get",
+        "Failed to remove entry from table.\n"
+    )) return error(msg);
+
+    msg->opcode = MESSAGE_T__OPCODE__OP_DEL + 1;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
     return 0;
 }
 
