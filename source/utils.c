@@ -92,8 +92,8 @@ int close_and_return_failure(int fd) {
 //                                        Error Handling
 // ====================================================================================================
 int assert_error(int condition, char* snippet_id, char* error_msg) {
-    // if condition is satisfied and verbose is set to true, print error
-    if (condition && getenv("verbose"))
+    // if condition is satisfied and silent is set to true, print error
+    if (condition && !getenv("silent"))
         fprintf(stderr, "[%s] %s", snippet_id, error_msg);
     return condition;
 }
