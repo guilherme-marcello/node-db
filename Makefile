@@ -23,7 +23,7 @@ OBJ_SERVER := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_SERVER))
 SRC_CLIENT := $(SRCDIR)/client_stub.c $(SRCDIR)/network_client.c 
 OBJ_CLIENT := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_CLIENT))
 
-SRC_MSG := $(SRCDIR)/sdmessage.pb-c.c
+SRC_MSG := $(SRCDIR)/sdmessage.pb-c.c $(SRCDIR)/message.c
 OBJ_MSG := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_MSG))
 
 .PHONY: all clean libmessages libutils libtable libserver libclient table-server table-client
