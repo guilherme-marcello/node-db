@@ -1,4 +1,5 @@
 #include "network_server.h"
+#include "network_server-private.h"
 #include "table_skel.h"
 #include "sdmessage.pb-c.h"
 #include "utils.h"
@@ -51,35 +52,6 @@ int network_server_init(short port) {
     return fd;
 }
 
-int get_client(int listening_fd) {
-    struct sockaddr_in client;
-    socklen_t size_client = sizeof((struct sockaddr *)&client);
-    return accept(listening_fd, (struct sockaddr *)&client, &size_client);
-}
-
-void process_request(int connection_socket, struct table_t *table) {
-    MessageT *request = network_receive(connection_socket);
-
-    if (request != NULL) {
-        printf("Request received!\n");
-        // invoke process...
-        if (invoke(request, table) == -1) {
-            message_t__free_unpacked(request, NULL);
-        } else {
-            // send response...
-            printf("Sending response....\n");
-            if (network_send(connection_socket, request) == -1) {
-                message_t__free_unpacked(request, NULL);
-            } else {
-                printf("Sent response to the client! Waiting for the next request...\n");
-                message_t__free_unpacked(request, NULL);
-                process_request(connection_socket, table);  // use recursion to process next request...
-            }
-        }
-    }
-}
-
-
 int network_main_loop(int listening_socket, struct table_t *table) {
     signal(SIGPIPE, SIG_IGN);
     while (true) {
@@ -109,4 +81,26 @@ int network_send(int client_socket, MessageT *msg) {
 
 int network_server_close(int socket) {
     return close(socket);
+}
+
+void process_request(int connection_socket, struct table_t *table) {
+    MessageT *request = network_receive(connection_socket);
+
+    if (request != NULL) {
+        printf("Request received!\n");
+        // invoke process...
+        if (invoke(request, table) == -1) {
+            message_t__free_unpacked(request, NULL);
+        } else {
+            // send response...
+            printf("Sending response....\n");
+            if (network_send(connection_socket, request) == -1) {
+                message_t__free_unpacked(request, NULL);
+            } else {
+                printf("Sent response to the client! Waiting for the next request...\n");
+                message_t__free_unpacked(request, NULL);
+                process_request(connection_socket, table);  // use recursion to process next request...
+            }
+        }
+    }
 }
