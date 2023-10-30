@@ -68,6 +68,26 @@ void usage_menu(int argc, char** argv) {
 // ====================================================================================================
 //                                      Client Stub Wrappers
 // ====================================================================================================
+int gettable() {
+    struct entry_t** entries = rtable_get_table(client.table);
+    if (assert_error(
+        entries == NULL,
+        "gettable",
+        "Failed to retrieve remote table.\n"
+    )) return -1;
+
+    // starting with index 0, iterate over entries, printing
+    int index = 0;
+    struct entry_t* entry;
+    while ((entry = entries[index])) {
+        printf("%s : ", entry->key);
+        print_data(entry->value->data, entry->value->datasize);
+        index++;
+    }
+
+    rtable_free_entries(entries);
+    return 0;
+}
 
 int getkeys() {
     char** keys = rtable_get_keys(client.table);
@@ -77,14 +97,15 @@ int getkeys() {
         "Failed to retrieve keys of remote table.\n"
     )) return -1;
 
-    // starting with index 0, iterate over keys, destroying them after printing
+    // starting with index 0, iterate over keys, printing
     int index = 0;
     char* key;
     while ((key = keys[index])) {
         printf("<key> %s\n", key);
-        destroy_dynamic_memory(key);
         index++;
     }
+
+    rtable_free_keys(keys);
     return 0;
 }
 
@@ -242,7 +263,8 @@ void user_interaction() {
                 printf("Successful operation.\n");
             break;
         case GETTABLE:
-            printf("GETTABLE!!\n");
+            if (gettable() == 0)
+                printf("Successful operation.\n");
             break;
         case QUIT:
             printf(EXIT_MESSAGE);

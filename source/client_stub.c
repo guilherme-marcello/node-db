@@ -294,14 +294,111 @@ char **rtable_get_keys(struct rtable_t *rtable) {
     return keys;
 }
 
-void rtable_free_keys(char **keys) {
-    return;
+struct entry_t **rtable_get_table(struct rtable_t *rtable) {
+    if (assert_error(
+        rtable == NULL,
+        "rtable_get_table",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_GETTABLE, MESSAGE_T__C_TYPE__CT_NONE);
+    if (msg_wrapper == NULL)
+        return NULL;
+    
+    // send a wait for response...
+    MessageT* received = network_send_receive(rtable, msg_wrapper);
+    message_t__free_unpacked(msg_wrapper, NULL);
+    if (was_operation_unsuccessful(received)) {
+        if (received != NULL)
+            message_t__free_unpacked(received, NULL);
+        return NULL;
+    }
+
+    // allocate buffer for entries
+    struct entry_t** entries = create_dynamic_memory((received->n_entries + 1) * sizeof(struct entry*));
+    if (assert_error(
+        entries == NULL,
+        "rtable_get_table",
+        ERROR_MALLOC
+    )) {
+        message_t__free_unpacked(received, NULL);
+        return NULL;
+    }
+    entries[received->n_keys] = NULL;
+
+    // iterate over wrapped entries (from message)
+    for (int i = 0; i < received->n_entries; i++) {
+        void* copied_data = duplicate_memory(received->entries[i]->value.data, received->entries[i]->value.len, "rtable_get_table");
+        if (assert_error(
+            copied_data == NULL,
+            "rtable_get_table",
+            "Failed to duplicate data from message.\n"
+        )) {
+            // destroy already created entries..
+            for (int j = 0; j < i; j++)
+                entry_destroy(entries[j]);
+            destroy_dynamic_memory(entries);
+            message_t__free_unpacked(received, NULL);
+            return NULL;
+        }
+
+        // create data_t!
+        struct data_t* data = data_create(received->entries[i]->value.len, copied_data);
+        if (assert_error(
+            data == NULL,
+            "rtable_get_table",
+            "Failed to create data structure.\n"
+        )) {
+            destroy_dynamic_memory(copied_data);
+            // destroy already created entries..
+            for (int j = 0; j < i; j++)
+                entry_destroy(entries[j]);
+            destroy_dynamic_memory(entries);
+            message_t__free_unpacked(received, NULL);
+            return NULL;
+        }
+
+        // create entry!
+        struct entry_t* entry = entry_create(
+            strdup(received->entries[i]->key), data
+        );
+        if (assert_error(
+            entry == NULL,
+            "rtable_get_table",
+            "Failed to create entry structure.\n"
+        )) {
+            data_destroy(data);
+            // destroy already created entries..
+            for (int j = 0; j < i; j++)
+                entry_destroy(entries[j]);
+            destroy_dynamic_memory(entries);
+            message_t__free_unpacked(received, NULL);
+            return NULL;
+        } 
+
+        // add to the buffer
+        entries[i] = entry;
+    }
+
+    return entries;
 }
 
-struct entry_t **rtable_get_table(struct rtable_t *rtable) {
-    return NULL;
+void rtable_free_keys(char **keys) {
+    // starting with index 0, iterate over keys, destroying
+    int index = 0;
+    char* key;
+    while ((key = keys[index])) {
+        destroy_dynamic_memory(key);
+        index++;
+    }
 }
 
 void rtable_free_entries(struct entry_t **entries) {
-    return;
+    // starting with index 0, iterate over entries, destroying them
+    int index = 0;
+    struct entry_t* entry;
+    while ((entry = entries[index])) {
+        entry_destroy(entry);
+        index++;
+    }
 }
