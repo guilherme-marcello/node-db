@@ -111,24 +111,6 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry) {
     return 0;
 }
 
-struct data_t* unwrap_data_from_message(MessageT* msg) {
-    if (msg == NULL || msg->value.data == NULL)
-        return NULL;
-
-    // copy data field from message...
-    void* value = duplicate_memory(msg->value.data, msg->value.len, "unwrap_data");
-    if (value == NULL)
-        return NULL;
-
-    // wrap in data_t..
-    struct data_t* data = data_create(msg->value.len, value);
-    if (data == NULL) {
-        destroy_dynamic_memory(value);
-        return NULL;
-    }
-    return data;
-}
-
 struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
     if (assert_error(
         rtable == NULL || key == NULL,

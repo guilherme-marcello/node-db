@@ -36,6 +36,24 @@ MessageT* wrap_message(MessageT__Opcode opcode, MessageT__CType ctype) {
     return msg_wrapper;
 }
 
+struct data_t* unwrap_data_from_message(MessageT* msg) {
+    if (msg == NULL || msg->value.data == NULL)
+        return NULL;
+
+    // copy data field from message...
+    void* value = duplicate_memory(msg->value.data, msg->value.len, "unwrap_data");
+    if (value == NULL)
+        return NULL;
+
+    // wrap in data_t..
+    struct data_t* data = data_create(msg->value.len, value);
+    if (data == NULL) {
+        destroy_dynamic_memory(value);
+        return NULL;
+    }
+    return data;
+}
+
 bool was_operation_unsuccessful(MessageT* received) {
     if (received == NULL)
         return true;
