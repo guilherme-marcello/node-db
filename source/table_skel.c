@@ -1,4 +1,5 @@
 #include "table_skel.h"
+#include "table_skel-private.h"
 #include "table.h"
 #include "message.h"
 #include "utils.h"
@@ -15,6 +16,38 @@ int table_skel_destroy(struct table_t* table) {
     return table_destroy(table);
 }
 
+int invoke(MessageT* msg, struct table_t* table) {
+    if (assert_error(
+        msg == NULL || table == NULL,
+        "invoke",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    switch (msg->opcode) {
+        case MESSAGE_T__OPCODE__OP_PUT:
+            printf("Received %s request!\n", "put");
+            return put(msg, table);        
+        case MESSAGE_T__OPCODE__OP_GET:
+            printf("Received %s request!\n", "get");
+            return get(msg, table);
+        case MESSAGE_T__OPCODE__OP_DEL:
+            printf("Received %s request!\n", "del");
+            return del(msg, table);
+        case MESSAGE_T__OPCODE__OP_SIZE:
+            printf("Received %s request!\n", "size");
+            return size(msg, table);
+        case MESSAGE_T__OPCODE__OP_GETKEYS:
+            printf("Received %s request!\n", "getkeys");
+            return getkeys(msg, table);
+        case MESSAGE_T__OPCODE__OP_GETTABLE:
+            printf("Received %s request!\n", "gettable");
+            return gettable(msg, table);
+        default:
+            printf("Received unknown request...ignoring!\n");
+            return error(msg);
+    }
+    return 0;
+}
 
 int error(MessageT* msg) {
     if (assert_error(
@@ -254,39 +287,5 @@ int gettable(MessageT* msg, struct table_t* table) {
     msg->entries = entries;
     msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_TABLE;
-    return 0;
-}
-
-
-int invoke(MessageT* msg, struct table_t* table) {
-    if (assert_error(
-        msg == NULL || table == NULL,
-        "invoke",
-        ERROR_NULL_POINTER_REFERENCE
-    )) return -1;
-
-    switch (msg->opcode) {
-        case MESSAGE_T__OPCODE__OP_PUT:
-            printf("Received %s request!\n", "put");
-            return put(msg, table);        
-        case MESSAGE_T__OPCODE__OP_GET:
-            printf("Received %s request!\n", "get");
-            return get(msg, table);
-        case MESSAGE_T__OPCODE__OP_DEL:
-            printf("Received %s request!\n", "del");
-            return del(msg, table);
-        case MESSAGE_T__OPCODE__OP_SIZE:
-            printf("Received %s request!\n", "size");
-            return size(msg, table);
-        case MESSAGE_T__OPCODE__OP_GETKEYS:
-            printf("Received %s request!\n", "getkeys");
-            return getkeys(msg, table);
-        case MESSAGE_T__OPCODE__OP_GETTABLE:
-            printf("Received %s request!\n", "gettable");
-            return gettable(msg, table);
-        default:
-            printf("Received unknown request...ignoring!\n");
-            return error(msg);
-    }
     return 0;
 }
