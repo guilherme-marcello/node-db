@@ -216,11 +216,6 @@ char **table_get_keys(struct table_t *table) {
         struct list_t* hash_table_entry = table->lists[i];
         // retrive entry's keys
         char** hash_table_entry_keys = list_get_keys(hash_table_entry);
-        if (hash_table_entry_keys == NULL) {
-            // free already stored keys in case of error
-            list_free_keys(array);
-            return NULL;
-        }
         // iterate over keys in hashtable entry and copy them to buffer
         for (int j = 0; j < hash_table_entry->size; j++) {
             array[index] = hash_table_entry_keys[j];
