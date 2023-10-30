@@ -178,7 +178,7 @@ int put(char* key, char* value) {
         return -1;
     }
 
-    void* buf_key = duplicate_memory(key, strlen(key), "put");
+    void* buf_key = duplicate_memory(key, strlen(key) + 1, "put");
     if (buf_key == NULL) {
         data_destroy(data);
         return -1;
