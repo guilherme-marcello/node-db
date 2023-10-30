@@ -64,7 +64,6 @@ void usage_menu(int argc, char** argv) {
 }
 
 void interrupt_handler() {
-    CLIENT_FREE();
     CLIENT_EXIT(0);
 }
 

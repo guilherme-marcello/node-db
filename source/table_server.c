@@ -86,7 +86,6 @@ void parse_args(char* argv[]) {
 }
 
 void interrupt_handler() {
-    SERVER_FREE();
     SERVER_EXIT(0);
 }
 #endif
