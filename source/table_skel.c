@@ -157,6 +157,34 @@ int getkeys(MessageT* msg, struct table_t* table) {
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    if (assert_error(
+        msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
+        "invoke",
+        "Invalid c_type.\n"
+    )) return -1;
+
+    char** keys = table_get_keys(table);
+    if (assert_error(
+        keys == NULL,
+        "invoke_getkeys",
+        "Failed to get keys from table.\n"
+    )) return error(msg);
+
+    int n_keys = table_size(table);
+    if (assert_error(
+        n_keys < 0,
+        "invoke_getkeys",
+        "Failed to retrieve table size.\n"
+    )) {
+        table_free_keys(keys);
+        return error(msg);   
+    }
+
+    msg->n_keys = n_keys;
+    msg->keys = keys;
+    msg->opcode = MESSAGE_T__OPCODE__OP_GETKEYS + 1;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
     return 0;
 }
 
