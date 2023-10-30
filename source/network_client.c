@@ -2,9 +2,14 @@
 #include "client_stub.h"
 #include "utils.h"
 #include "client_stub-private.h"
+#include "sdmessage.pb-c.h"
+#include "message.h"
 
 
 #include <arpa/inet.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
 
@@ -45,8 +50,14 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
+    if (assert_error(
+        rtable->sockfd < 0,
+        "network_send_receive",
+        "Connection to remote server is down.\n"
+    )) return NULL;
+
     size_t msg_size = message_t__get_packed_size(msg);
-    short msg_size_be = htons(msg_size); // reorder bytes to be
+    unsigned short msg_size_be = htons(msg_size); // reorder bytes to be
 
     // allocate buffer with message size
     uint8_t* buffer = (uint8_t*)create_dynamic_memory(msg_size);
@@ -54,7 +65,6 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
         buffer == NULL,
         "network_send_receive",
         ERROR_MALLOC
-
     )) {
         network_close(rtable);
         return NULL;
@@ -64,7 +74,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
 
     // send size
     if (assert_error(
-        write_n_to_sock(rtable->sockfd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
+        write_all(rtable->sockfd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
         "network_send_receive",
         "Failed to send size of message to server.\n"
     )) {
@@ -75,7 +85,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
 
     // send msg buffer
     if (assert_error(
-        write_n_to_sock(rtable->sockfd, (void*)buffer, msg_size) != msg_size,
+        write_all(rtable->sockfd, (void*)buffer, msg_size) != msg_size,
         "network_send_receive",
         "Failed to send message buffer to server.\n"
     )) {
@@ -85,10 +95,11 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     }
     destroy_dynamic_memory(buffer);
 
+
     // size and buffer sent... receive response
     msg_size_be = 0;
     if (assert_error(
-        read_n_from_sock(rtable->sockfd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
+        read_all(rtable->sockfd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
         "network_send_receive",
         "Failed to receive server response message size.\n"
     )) {
@@ -98,6 +109,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
 
     // allocate memory to receive response message
     msg_size = ntohs(msg_size_be);
+
     buffer = (uint8_t*)create_dynamic_memory(msg_size);
     if (assert_error(
         buffer == NULL,
@@ -108,10 +120,22 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
         return NULL;
     };
 
+    if (assert_error(
+        read_all(rtable->sockfd, buffer, msg_size) != msg_size,
+        "network_send_receive",
+        "Failed to read server response.\n"
+    )) {
+        network_close(rtable);
+        destroy_dynamic_memory(buffer);
+        return NULL;
+    }
+
+    // unpack message
     MessageT *msg_response = message_t__unpack(NULL, msg_size, buffer);
     destroy_dynamic_memory(buffer);
     return msg_response;
 }
+
 
 int network_close(struct rtable_t *rtable) {
     if (assert_error(
@@ -121,6 +145,7 @@ int network_close(struct rtable_t *rtable) {
     )) return -1;
 
     close(rtable->sockfd);
+    rtable->sockfd = -1;
     return 0;
 }
 
