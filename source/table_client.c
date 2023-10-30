@@ -191,7 +191,7 @@ int put(char* key, char* value) {
         return -1;
     }
 
-    // send requst to server
+    // send request to server
     if (assert_error(
         rtable_put(client.table, entry) == -1,
         "put",

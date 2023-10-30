@@ -17,6 +17,19 @@ void CLIENT_EXIT(int status);
 void CLIENT_FREE();
 
 // ====================================================================================================
+//                                      Client Stub Wrappers
+// ====================================================================================================
+// helpers to perform an action over a remote table
+// parsing given values, translating to skel calls over global TableClientData's remote table
+// returning 0 if OK, -1 otherwise.
+int gettable();
+int getkeys();
+int size();
+int del(char *key);
+int get(char *key);
+int put(char* key, char* value);
+
+// ====================================================================================================
 //                                          ERROR HANDLING
 // ====================================================================================================
 #define ERROR_ARGS "\033[0;31m[!] Error:\033[0m Number of arguments is should be 2. Execute `table-server -h` for 'help'.\n"
