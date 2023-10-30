@@ -2,14 +2,15 @@
 #include "utils.h"
 #include "sdmessage.pb-c.h"
 #include "entry.h"
+#include "data.h"
+
 
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
 
-
-EntryT* wrap_entry(struct entry_t* entry) {
+EntryT* wrap_entry_with_data(char* key, struct data_t* data) {
     EntryT* entry_wrapper = create_dynamic_memory(sizeof(EntryT));
     if (assert_error(
         entry_wrapper == NULL,
@@ -17,10 +18,14 @@ EntryT* wrap_entry(struct entry_t* entry) {
         ERROR_MALLOC
     )) return NULL;
     entry_t__init(entry_wrapper);
-    entry_wrapper->key = entry->key;
-    entry_wrapper->value.data = entry->value->data;
-    entry_wrapper->value.len = entry->value->datasize;
+    entry_wrapper->key = key;
+    entry_wrapper->value.data = data->data;
+    entry_wrapper->value.len = data->datasize;
     return entry_wrapper;
+}
+
+EntryT* wrap_entry(struct entry_t* entry) {
+    return wrap_entry_with_data(entry->key, entry->value);
 }
 
 MessageT* wrap_message(MessageT__Opcode opcode, MessageT__CType ctype) {

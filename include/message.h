@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+EntryT* wrap_entry_with_data(char* key, struct data_t* data);
 EntryT* wrap_entry(struct entry_t* entry);
 MessageT* wrap_message(MessageT__Opcode opcode, MessageT__CType ctype);
 struct data_t* unwrap_data_from_message(MessageT* msg);
