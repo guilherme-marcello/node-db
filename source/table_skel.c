@@ -5,6 +5,7 @@
 #include "sdmessage.pb-c.h"
 
 #include <stdio.h>
+#include <string.h>
 
 struct table_t *table_skel_init(int n_lists) {
     return table_create(n_lists);
@@ -194,6 +195,65 @@ int gettable(MessageT* msg, struct table_t* table) {
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    if (assert_error(
+        msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
+        "invoke",
+        "Invalid c_type.\n"
+    )) return -1;
+
+    char** keys = table_get_keys(table);
+    if (assert_error(
+        keys == NULL,
+        "invoke",
+        ERROR_MALLOC
+    )) return error(msg);
+
+    int n_entries = table_size(table);
+    if (assert_error(
+        n_entries < 0,
+        "invoke",
+        ERROR_MALLOC
+    )) {
+        table_free_keys(keys);
+        return error(msg);
+    }
+
+    EntryT** entries = create_dynamic_memory(sizeof(EntryT*) * (n_entries + 1));
+    entries[n_entries] = NULL; // in case client is expecting NULL terminator
+
+    // with keys and n_keys, iterate over table, setting new entries
+    for (int i = 0; i < n_entries; i++) {
+        struct data_t* data = table_get(table, keys[i]);
+        if (data == NULL) {
+            // destroy copied entries until now...
+            for (int j = 0; j < i; j++)
+                destroy_dynamic_memory(entries[j]);
+            destroy_dynamic_memory(entries);
+            table_free_keys(keys);
+            return error(msg);
+        }
+
+        // got data for this key! wrap it into a EntryT
+        entries[i] = wrap_entry_with_data(strdup(keys[i]), data);
+        if (entries[i] == NULL) {
+            // destroy copied entries until now...
+            for (int j = 0; j < i; j++)
+                destroy_dynamic_memory(entries[j]);
+            destroy_dynamic_memory(entries);
+            table_free_keys(keys);
+            return error(msg);     
+        }
+
+        // destroy only pointer to data struct...
+        destroy_dynamic_memory(data);
+    }
+    table_free_keys(keys);
+
+    msg->n_entries = n_entries;
+    msg->entries = entries;
+    msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE + 1;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_TABLE;
     return 0;
 }
 
