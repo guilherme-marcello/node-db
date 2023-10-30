@@ -130,6 +130,24 @@ int size(MessageT* msg, struct table_t* table) {
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    if (assert_error(
+        msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
+        "invoke",
+        "Invalid c_type.\n"
+    )) return -1;
+
+    msg->result = table_size(table);
+    if (assert_error(
+        msg->result < 0,
+        "invoke_size",
+        "Failed to retrieve table size.\n"
+    )) return error(msg);
+
+    // all good!
+    msg->opcode = MESSAGE_T__OPCODE__OP_SIZE + 1;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
+
     return 0;
 }
 
