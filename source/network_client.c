@@ -56,84 +56,10 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
         "Connection to remote server is down.\n"
     )) return NULL;
 
-    size_t msg_size = message_t__get_packed_size(msg);
-    unsigned short msg_size_be = htons(msg_size); // reorder bytes to be
-
-    // allocate buffer with message size
-    uint8_t* buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
-    if (assert_error(
-        buffer == NULL,
-        "network_send_receive",
-        ERROR_MALLOC
-    )) {
-        network_close(rtable);
+    if (send_message(rtable->sockfd, msg) < 0)
         return NULL;
-    }
 
-    message_t__pack(msg, buffer);
-
-    // send size
-    if (assert_error(
-        write_all(rtable->sockfd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
-        "network_send_receive",
-        "Failed to send size of message to server.\n"
-    )) {
-        destroy_dynamic_memory(buffer);
-        network_close(rtable);
-        return NULL;
-    }
-
-    // send msg buffer
-    if (assert_error(
-        write_all(rtable->sockfd, (void*)buffer, msg_size) != msg_size,
-        "network_send_receive",
-        "Failed to send message buffer to server.\n"
-    )) {
-        destroy_dynamic_memory(buffer);
-        network_close(rtable);
-        return NULL;
-    }
-    destroy_dynamic_memory(buffer);
-
-
-    // size and buffer sent... receive response
-    msg_size_be = 0;
-    if (assert_error(
-        read_all(rtable->sockfd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
-        "network_send_receive",
-        "Failed to receive server response message size.\n"
-    )) {
-        network_close(rtable);
-        return NULL;
-    }
-
-    // allocate memory to receive response message
-    msg_size = ntohs(msg_size_be);
-
-    buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
-    if (assert_error(
-        buffer == NULL,
-        "network_send_receive",
-        ERROR_MALLOC
-    )) {
-        network_close(rtable);
-        return NULL;
-    };
-
-    if (assert_error(
-        read_all(rtable->sockfd, buffer, msg_size) != msg_size,
-        "network_send_receive",
-        "Failed to read server response.\n"
-    )) {
-        network_close(rtable);
-        destroy_dynamic_memory(buffer);
-        return NULL;
-    }
-
-    // unpack message
-    MessageT *msg_response = message_t__unpack(NULL, msg_size, buffer);
-    destroy_dynamic_memory(buffer);
-    return msg_response;
+    return read_message(rtable->sockfd);
 }
 
 

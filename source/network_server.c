@@ -102,83 +102,11 @@ int network_main_loop(int listening_socket, struct table_t *table) {
 }
 
 MessageT *network_receive(int client_socket) {
-    // get request message size
-    unsigned short msg_size_be;
-    if (assert_error(
-        read_all(client_socket, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
-        "network_receive",
-        "Failed to receive client message's size.\n"
-    )) return NULL;
-
-    size_t msg_size = ntohs(msg_size_be);
-
-    // allocate memory to receive request message
-    void* buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
-    if (assert_error(
-        buffer == NULL,
-        "network_receive",
-        ERROR_MALLOC
-    )) return NULL;
-
-    // copy request to buffer..
-    if (assert_error(
-        read_all(client_socket, buffer, msg_size) != msg_size,
-        "network_receive",
-        "Failed to read client request.\n"
-    )) {
-        destroy_dynamic_memory(buffer);
-        return NULL;
-    }
-
-    // unpack message
-    MessageT *msg_request = message_t__unpack(NULL, msg_size, buffer);
-    destroy_dynamic_memory(buffer);
-
-    return msg_request;
+    return read_message(client_socket);
 }
 
 int network_send(int client_socket, MessageT *msg) {
-    if (assert_error(
-        msg == NULL,
-        "network_send",
-        ERROR_NULL_POINTER_REFERENCE
-    )) return -1;
-
-    size_t msg_size = message_t__get_packed_size(msg);
-    unsigned short msg_size_be = htons(msg_size); // reorder bytes to be
-
-    // allocate buffer with message size
-    uint8_t* buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
-    if (assert_error(
-        buffer == NULL,
-        "network_send",
-        ERROR_MALLOC
-    )) return -1;
-
-    message_t__pack(msg, buffer);
-
-    // send size
-    if (assert_error(
-        write_all(client_socket, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
-        "network_send",
-        "Failed to send size of message.\n"
-    )) {
-        destroy_dynamic_memory(buffer);
-        return -1;
-    }
-
-    // send msg buffer
-    if (assert_error(
-        write_all(client_socket, (void*)buffer, msg_size) != msg_size,
-        "network_send",
-        "Failed to send message buffer.\n"
-    )) {
-        destroy_dynamic_memory(buffer);
-        return -1;
-    }
-
-    destroy_dynamic_memory(buffer);
-    return 0;
+    return send_message(client_socket, msg);
 }
 
 int network_server_close(int socket) {
