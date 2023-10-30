@@ -242,7 +242,56 @@ int rtable_size(struct rtable_t *rtable) {
 }
 
 char **rtable_get_keys(struct rtable_t *rtable) {
-    return NULL;
+    if (assert_error(
+        rtable == NULL,
+        "rtable_get_keys",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_GETKEYS, MESSAGE_T__C_TYPE__CT_NONE);
+    if (msg_wrapper == NULL)
+        return NULL;
+    
+    // send a wait for response...
+    MessageT* received = network_send_receive(rtable, msg_wrapper);
+    message_t__free_unpacked(msg_wrapper, NULL);
+    if (was_operation_unsuccessful(received)) {
+        if (received != NULL)
+            message_t__free_unpacked(received, NULL);
+        return NULL;
+    }
+
+    // allocate buffer for keys
+    char** keys = create_dynamic_memory((received->n_keys + 1) * sizeof(char*));
+    if (assert_error(
+        keys == NULL,
+        "rtable_get_keys",
+        ERROR_MALLOC
+    )) {
+        message_t__free_unpacked(received, NULL);
+        return NULL;
+    }
+    keys[received->n_keys] = NULL;
+
+    // copy keys in message to keys buffer...
+    for (int i = 0; i < received->n_keys; i++) {
+        keys[i] = strdup(received->keys[i]);
+        if (assert_error(
+            keys[i] == NULL,
+            "rtable_get_keys",
+            ERROR_STRDUP
+        )) {
+            // free already duplicated keys...
+            for (int j = 0; j < i; j++)
+                destroy_dynamic_memory(keys[j]);
+            message_t__free_unpacked(received, NULL);
+            destroy_dynamic_memory(keys);
+            return NULL;
+        }
+    }
+
+    message_t__free_unpacked(received, NULL);
+    return keys;
 }
 
 void rtable_free_keys(char **keys) {
