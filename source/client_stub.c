@@ -6,6 +6,7 @@
 #include "utils.h"
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -98,17 +99,17 @@ MessageT* wrap_message(MessageT__Opcode opcode, MessageT__CType ctype) {
     )) return NULL;
     message_t__init(msg_wrapper);
 
-    msg_wrapper->opcode = MESSAGE_T__OPCODE__OP_PUT;
-    msg_wrapper->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
+    msg_wrapper->opcode = opcode;
+    msg_wrapper->c_type = ctype;
     return msg_wrapper;
 }
 
-bool was_operation_successful(MessageT* sent, MessageT* received) {
-    if (sent == NULL || received == NULL)
-        return false;
-
+bool was_operation_unsuccessful(MessageT* received) {
+    if (received == NULL)
+        return true;
+    
     return received->c_type == MESSAGE_T__C_TYPE__CT_NONE
-        && received->opcode == sent->opcode + 1;
+        && received->opcode == MESSAGE_T__OPCODE__OP_ERROR;
 }
 
 int rtable_put(struct rtable_t *rtable, struct entry_t *entry) {
@@ -133,7 +134,7 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry) {
 
     // send a wait for response...
     MessageT* received = network_send_receive(rtable, msg_wrapper);
-    if (!was_operation_successful(msg_wrapper, received)) {
+    if (was_operation_unsuccessful(received)) {
         entry_t__free_unpacked(entry_wrapper, NULL);
         message_t__free_unpacked(msg_wrapper, NULL);
         if (received != NULL)
@@ -163,8 +164,34 @@ struct data_t* unwrap_data_from_message(MessageT* msg) {
 }
 
 struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
-    return NULL;
+    if (assert_error(
+        rtable == NULL || key == NULL,
+        "rtable_get",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_GET, MESSAGE_T__C_TYPE__CT_KEY);
+    if (msg_wrapper == NULL)
+        return NULL;
+
+    msg_wrapper->key = strdup(key);
+
+    // send a wait for response...
+    MessageT* received = network_send_receive(rtable, msg_wrapper);
+    if (was_operation_unsuccessful(received)) {
+        message_t__free_unpacked(msg_wrapper, NULL);
+        if (received != NULL)
+            message_t__free_unpacked(received, NULL);
+        return NULL;
+    }
+
+    struct data_t* data = unwrap_data_from_message(received);
+    message_t__free_unpacked(received, NULL);
+
+    return data;
 }
+
+
 
 int rtable_del(struct rtable_t *rtable, char *key) {
     return 0;
