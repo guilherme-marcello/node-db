@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <stdlib.h>
 
 
@@ -60,6 +61,11 @@ void usage_menu(int argc, char** argv) {
         // exit program
         exit(EXIT_SUCCESS);
     }
+}
+
+void interrupt_handler() {
+    CLIENT_FREE();
+    CLIENT_EXIT(0);
 }
 
 #endif
@@ -284,6 +290,8 @@ void user_interaction() {
 //                                              Main
 // ====================================================================================================
 int main(int argc, char *argv[]) {
+    signal(SIGINT, interrupt_handler);
+    
     // launch usage menu
     usage_menu(argc, argv);
     if (assert_error(

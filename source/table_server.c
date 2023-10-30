@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #ifndef SERVER_GLOBAL_VARIABLES
 // ====================================================================================================
@@ -83,6 +84,11 @@ void parse_args(char* argv[]) {
     options.n_lists = n;
     return;
 }
+
+void interrupt_handler() {
+    SERVER_FREE();
+    SERVER_EXIT(0);
+}
 #endif
 
 #ifndef TABLE_SERVER_MAIN
@@ -90,6 +96,8 @@ void parse_args(char* argv[]) {
 //                                              Main
 // ====================================================================================================
 int main(int argc, char *argv[]) {
+    signal(SIGINT, interrupt_handler);
+
     // launch usage menu
     usage_menu(argc, argv);
     if (assert_error(
