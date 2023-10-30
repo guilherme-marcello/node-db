@@ -19,6 +19,9 @@ void SERVER_INIT(char* argv[]);
 void SERVER_EXIT(int status);
 void SERVER_FREE();
 
+// Function to parse argv, updating global TableServerOptions struct
+void parse_args(char* argv[]);
+
 // ====================================================================================================
 //                                          ERROR HANDLING
 // ====================================================================================================
