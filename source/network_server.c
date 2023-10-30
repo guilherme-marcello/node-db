@@ -25,9 +25,7 @@ int network_server_init(short port) {
         setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0,
         "network_server_init",
         "Failed to set SO_REUSEADDR"
-    )) {
-        return close_and_return_failure(fd);
-    }
+    )) return close_and_return_failure(fd);
 
     struct sockaddr_in addr;
     addr.sin_family = AF_INET; // ipv4
