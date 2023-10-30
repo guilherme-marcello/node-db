@@ -53,7 +53,7 @@ $(LIBDIR)/libclient.a: $(OBJ_CLIENT)
 
 
 
-all: table-server table_client
+all: libtable table-server table-client
 
 
 $(BINDIR)/table-server: $(OBJDIR)/table_server.o $(LIBDIR)/libserver.a
