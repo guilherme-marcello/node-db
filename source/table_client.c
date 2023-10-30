@@ -28,7 +28,7 @@ void CLIENT_INIT(char* argv[]) {
     if (assert_error(
         client.table == NULL,
         "CLIENT_INIT",
-        "Failed to initialize table client."
+        "Failed to initialize table client.\n"
     )) return;
     client.valid = true;
 }
@@ -37,6 +37,8 @@ void CLIENT_EXIT(int status) {
     exit(status);
 }
 void CLIENT_FREE() {
+    if (client.table == NULL)
+        return;
     assert_error(
         rtable_disconnect(client.table) == M_ERROR,
         "CLIENT_FREE",
@@ -58,6 +60,78 @@ void usage_menu(int argc, char** argv) {
         // exit program
         exit(EXIT_SUCCESS);
     }
+}
+
+#endif
+
+#ifndef CLIENT_STUB_WRAPPERS
+// ====================================================================================================
+//                                      Client Stub Wrappers
+// ====================================================================================================
+
+int get(char *key) {
+    if (assert_error(
+        key == NULL,
+        "get",
+        "Missing args for GET operation: get <key>.\n"
+    )) return -1;
+
+    printf("Getting key %s...\n", key);
+    // retrieve data from remote table
+    struct data_t* data = rtable_get(client.table, key);
+
+    if (assert_error(
+        data == NULL,
+        "get",
+        "Failed to retrieve key from remote table.\n"
+    )) return -1;
+
+    printf("Found data for key %s: ", key);
+    print_data(data->data, data->datasize);
+    data_destroy(data);
+    return 0;
+}
+
+int put(char* key, char* value) {
+    if (assert_error(
+        key == NULL || value == NULL,
+        "put",
+        "Missing args for PUT operation: put <key> <value>.\n"
+    )) return -1;
+
+    void* buf_value = duplicate_memory(value, strlen(value), "put");
+    if (buf_value == NULL)
+        return -1;
+
+    struct data_t* data = data_create(strlen(value), buf_value);
+    if (data == NULL) {
+        destroy_dynamic_memory(buf_value);
+        return -1;
+    }
+
+    void* buf_key = duplicate_memory(key, strlen(key), "put");
+    if (buf_key == NULL) {
+        data_destroy(data);
+        return -1;
+    }
+
+    struct entry_t* entry = entry_create(buf_key, data);
+    if (entry == NULL) {
+        data_destroy(data);
+        destroy_dynamic_memory(buf_key);
+        return -1;
+    }
+
+    // send requst to server
+    if (assert_error(
+        rtable_put(client.table, entry) == -1,
+        "put",
+        "Failed to put entry in remote table.\n"
+    )) {
+        entry_destroy(entry);
+        return -1;
+    }
+    return 0;
 }
 
 #endif
@@ -85,6 +159,8 @@ enum CommandType parse_command(char* token) {
     return INVALID;
 }
 
+
+
 void user_interaction() {
     char input[MAX_INPUT_LENGTH]; // user input buffer
     while (!client.terminate) {
@@ -92,17 +168,18 @@ void user_interaction() {
         if (fgets(input, sizeof(input), stdin) == NULL)
             break;
 
-        if (input[strlen(input) - 1] == '\n')
-            input[strlen(input) - 1] = '\0';
-
-        char* token = strtok(input, " ");
+        char* token = strtok(input, " \n");
+        char *key = strtok(NULL, " \n");
+        char *value = strtok(NULL, "\n");
 
         switch (parse_command(token)) {
         case PUT:
-            printf("PUT!!\n");
+            if (put(key, value) == 0)
+                printf("Successful operation.\n");
             break;
         case GET:
-            printf("GET!!\n");
+            if (get(key) == 0)
+                printf("Successful operation.\n");
             break;
         case DEL:
             printf("DEL!!\n");
@@ -117,7 +194,7 @@ void user_interaction() {
             printf("GETTABLE!!\n");
             break;
         case QUIT:
-            printf("quit!!\n");
+            printf(EXIT_MESSAGE);
             client.terminate = 1;
             break;
         default:
@@ -140,7 +217,7 @@ int main(int argc, char *argv[]) {
         argc != NUMBER_OF_ARGS,
         "main",
         ERROR_ARGS
-    )) return -1;
+    )) CLIENT_EXIT(EXIT_FAILURE);
 
     // init client
     CLIENT_INIT(argv);
