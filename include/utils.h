@@ -37,6 +37,10 @@ enum RemoveOperationStatus {
     REMOVE_ERROR = -1 
 };
 
+/* Função que trata e imprime o conteudo de ptr (de tamanho size)
+ */
+void print_data(void* ptr, int size);
+
 /* Função que compara duas strings e retorna a ordem das mesmas, sendo esta
  * ordem definida pela ordem alfabética do primeiro caractere não-igual.
  * Retorna 0 se as strings forem iguais, -1 se str1 < str2,
