@@ -3,6 +3,7 @@
 #include "entry.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 #include <string.h>
 
 enum ComparisonStatus string_compare(char* str1, char* str2) {
@@ -86,6 +87,12 @@ void* duplicate_memory(void* from, int size, char* snippet_id) {
 int close_and_return_failure(int fd) {
     close(fd);
     return -1;
+}
+
+int get_client(int listening_fd) {
+    struct sockaddr_in client;
+    socklen_t size_client = sizeof((struct sockaddr *)&client);
+    return accept(listening_fd, (struct sockaddr *)&client, &size_client);
 }
 
 // ====================================================================================================

@@ -75,8 +75,21 @@ int assert_error(int condition, char* snippet_id, char* error_msg);
 //                                          NETWORK
 // ====================================================================================================
 
-ssize_t write_n_to_sock(int sock, const void *buf, size_t n);
-ssize_t read_n_from_sock(int sock, void *buf, size_t n);
+/**
+ * Accept a client connection on the specified listening socket and return the
+ * socket descriptor for the new connection.
+ *
+ * @param listening_fd - The file descriptor of the listening socket.
+ * @return The socket descriptor of the accepted client connection, or -1 on failure.
+ */
+int get_client(int listening_fd);
+
+/**
+ * Close the specified file descriptor and return -1 to indicate a failure.
+ *
+ * @param fd - The file descriptor to close.
+ * @return -1 to indicate a failure.
+ */
 int close_and_return_failure(int fd);
 
 // ====================================================================================================
