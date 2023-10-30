@@ -29,7 +29,7 @@ void SERVER_INIT(char* argv[]) {
     if (assert_error(
         server.listening_fd < 0 || server.table == NULL,
         "SERVER_INIT",
-        "Failed to initialize table server."
+        "Failed to initialize table server.\n"
     )) return;
     server.valid = true;
 }
