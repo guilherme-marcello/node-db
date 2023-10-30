@@ -138,13 +138,12 @@ int gettable(MessageT* msg, struct table_t* table) {
 
 
 int invoke(MessageT* msg, struct table_t* table) {
-    printf("maing invoke...\n");
     if (assert_error(
         msg == NULL || table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
-    printf("maing invoke swithc......\n");
+
     switch (msg->opcode) {
         case MESSAGE_T__OPCODE__OP_PUT:
             printf("Received %s request!\n", "put");
