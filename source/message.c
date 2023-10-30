@@ -206,7 +206,7 @@ ssize_t write_all(int sock, const void *buf, size_t n) {
                 assert_error(
                     1,
                     "write_n_to_sock",
-                    "Failed to write to the socket."
+                    "Failed to write to the socket.\n"
                 );
                 return -1;
             }

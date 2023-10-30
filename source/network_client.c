@@ -12,8 +12,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 int network_connect(struct rtable_t *rtable) {
+    signal(SIGPIPE, SIG_IGN);
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(rtable->server_port);
