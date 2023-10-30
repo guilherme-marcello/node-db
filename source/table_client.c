@@ -69,6 +69,35 @@ void usage_menu(int argc, char** argv) {
 //                                      Client Stub Wrappers
 // ====================================================================================================
 
+int size() {
+    int size = rtable_size(client.table);
+    if (assert_error(
+        size < 0,
+        "size",
+        "Failed to retrieve size of remote table.\n"
+    )) return -1;
+
+    printf("Table size: %d\n", size);
+    return 0;
+}
+
+int del(char *key) {
+    if (assert_error(
+        key == NULL,
+        "del",
+        "Missing args for DEL operation: del <key>.\n"
+    )) return -1;
+
+    printf("Deleting key %s...\n", key);
+    if (assert_error(
+        rtable_del(client.table, key) < 0,
+        "del",
+        "Failed to delete key from remote table.\n"
+    )) return -1;
+
+    return 0;
+}
+
 int get(char *key) {
     if (assert_error(
         key == NULL,
@@ -182,10 +211,12 @@ void user_interaction() {
                 printf("Successful operation.\n");
             break;
         case DEL:
-            printf("DEL!!\n");
+            if (del(key) == 0)
+                printf("Successful operation.\n");
             break;
         case SIZE:
-            printf("SIZE!!\n");
+            if (size() >= 0)
+                printf("Successful operation.\n");
             break;
         case GETKEYS:
             printf("GETKEYS!!\n");

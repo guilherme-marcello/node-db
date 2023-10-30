@@ -191,14 +191,54 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key) {
     return data;
 }
 
-
-
 int rtable_del(struct rtable_t *rtable, char *key) {
+    if (assert_error(
+        rtable == NULL || key == NULL,
+        "rtable_get",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_DEL, MESSAGE_T__C_TYPE__CT_KEY);
+    if (msg_wrapper == NULL)
+        return -1;
+    
+    msg_wrapper->key = strdup(key);
+
+    // send a wait for response...
+    MessageT* received = network_send_receive(rtable, msg_wrapper);
+    if (was_operation_unsuccessful(received)) {
+        message_t__free_unpacked(msg_wrapper, NULL);
+        if (received != NULL)
+            message_t__free_unpacked(received, NULL);
+        return -1;
+    }
+
+    message_t__free_unpacked(received, NULL);
     return 0;
 }
 
 int rtable_size(struct rtable_t *rtable) {
-    return 0;
+    if (assert_error(
+        rtable == NULL,
+        "rtable_size",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_SIZE, MESSAGE_T__C_TYPE__CT_NONE);
+    if (msg_wrapper == NULL)
+        return -1;
+    
+    // send a wait for response...
+    MessageT* received = network_send_receive(rtable, msg_wrapper);
+    if (was_operation_unsuccessful(received)) {
+        message_t__free_unpacked(msg_wrapper, NULL);
+        if (received != NULL)
+            message_t__free_unpacked(received, NULL);
+        return -1;
+    }
+    int size = received->result;
+    message_t__free_unpacked(received, NULL);
+    return size;
 }
 
 char **rtable_get_keys(struct rtable_t *rtable) {
