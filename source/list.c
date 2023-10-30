@@ -288,11 +288,8 @@ char **list_get_keys(struct list_t *list) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
-    if (assert_error(
-        list->head == NULL,
-        "list_get_keys",
-        ERROR_EMPTY_LIST
-    )) return NULL;
+    if (list->head == NULL)
+        return NULL;
 
     // allocate memory for the array of keys
     char** array = create_dynamic_memory(sizeof(char*) * (list->size + 1));
