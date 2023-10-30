@@ -60,7 +60,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     unsigned short msg_size_be = htons(msg_size); // reorder bytes to be
 
     // allocate buffer with message size
-    uint8_t* buffer = (uint8_t*)create_dynamic_memory(msg_size);
+    uint8_t* buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
     if (assert_error(
         buffer == NULL,
         "network_send_receive",
@@ -110,7 +110,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     // allocate memory to receive response message
     msg_size = ntohs(msg_size_be);
 
-    buffer = (uint8_t*)create_dynamic_memory(msg_size);
+    buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
     if (assert_error(
         buffer == NULL,
         "network_send_receive",
