@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 
 EntryT* wrap_entry(struct entry_t* entry) {
@@ -101,6 +102,86 @@ bool was_operation_unsuccessful(MessageT* received) {
     
     return received->c_type == MESSAGE_T__C_TYPE__CT_NONE
         && received->opcode == MESSAGE_T__OPCODE__OP_ERROR;
+}
+
+MessageT* read_message(int fd) {
+    // get request message size
+    unsigned short msg_size_be;
+    if (assert_error(
+        read_all(fd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
+        "read_message",
+        "Failed to receive message's size.\n"
+    )) return NULL;
+
+    size_t msg_size = ntohs(msg_size_be);
+
+    // allocate memory to receive message
+    void* buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
+    if (assert_error(
+        buffer == NULL,
+        "network_receive",
+        ERROR_MALLOC
+    )) return NULL;
+
+    // copy message to buffer..
+    if (assert_error(
+        read_all(fd, buffer, msg_size) != msg_size,
+        "network_receive",
+        "Failed to read client request.\n"
+    )) {
+        destroy_dynamic_memory(buffer);
+        return NULL;
+    }
+
+    // unpack message
+    MessageT *msg_request = message_t__unpack(NULL, msg_size, buffer);
+    destroy_dynamic_memory(buffer);
+
+    return msg_request;
+}
+
+int send_message(int fd, MessageT *msg) {
+    if (assert_error(
+        msg == NULL,
+        "network_send_message",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    size_t msg_size = message_t__get_packed_size(msg);
+    unsigned short msg_size_be = htons(msg_size); // reorder bytes to be
+
+    // allocate buffer with message size
+    uint8_t* buffer = (uint8_t*)create_dynamic_memory(msg_size * sizeof(uint8_t*));
+    if (assert_error(
+        buffer == NULL,
+        "network_send",
+        ERROR_MALLOC
+    )) return -1;
+
+    message_t__pack(msg, buffer);
+
+    // send size
+    if (assert_error(
+        write_all(fd, &msg_size_be, sizeof(msg_size_be)) != sizeof(msg_size_be),
+        "network_send_message",
+        "Failed to send size of message.\n"
+    )) {
+        destroy_dynamic_memory(buffer);
+        return -1;
+    }
+
+    // send msg buffer
+    if (assert_error(
+        write_all(fd, (void*)buffer, msg_size) != msg_size,
+        "network_send_message",
+        "Failed to send message buffer.\n"
+    )) {
+        destroy_dynamic_memory(buffer);
+        return -1;
+    }
+
+    destroy_dynamic_memory(buffer);
+    return 0;
 }
 
 ssize_t write_all(int sock, const void *buf, size_t n) {
