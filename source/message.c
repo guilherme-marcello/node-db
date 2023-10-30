@@ -1,9 +1,48 @@
 #include "message.h"
 #include "utils.h"
+#include "sdmessage.pb-c.h"
+#include "entry.h"
 
+#include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
 
+
+EntryT* wrap_entry(struct entry_t* entry) {
+    EntryT* entry_wrapper = create_dynamic_memory(sizeof(EntryT));
+    if (assert_error(
+        entry_wrapper == NULL,
+        "wrap_entry",
+        ERROR_MALLOC
+    )) return NULL;
+    entry_t__init(entry_wrapper);
+    entry_wrapper->key = entry->key;
+    entry_wrapper->value.data = entry->value->data;
+    entry_wrapper->value.len = entry->value->datasize;
+    return entry_wrapper;
+}
+
+MessageT* wrap_message(MessageT__Opcode opcode, MessageT__CType ctype) {
+    MessageT* msg_wrapper = create_dynamic_memory(sizeof(MessageT));
+    if (assert_error(
+        msg_wrapper == NULL,
+        "wrap_message",
+        ERROR_MALLOC
+    )) return NULL;
+    message_t__init(msg_wrapper);
+
+    msg_wrapper->opcode = opcode;
+    msg_wrapper->c_type = ctype;
+    return msg_wrapper;
+}
+
+bool was_operation_unsuccessful(MessageT* received) {
+    if (received == NULL)
+        return true;
+    
+    return received->c_type == MESSAGE_T__C_TYPE__CT_NONE
+        && received->opcode == MESSAGE_T__OPCODE__OP_ERROR;
+}
 
 ssize_t write_all(int sock, const void *buf, size_t n) {
     size_t bytes_written = 0;
