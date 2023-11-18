@@ -5,6 +5,7 @@ BINDIR  := binary
 OBJDIR  := object
 LIBDIR	:= lib
 TESTDIR	:= tests
+DEPDIR	:= dependencies
 PROTBUF	:= /usr/include/protobuf-c/
 
 # Compiler and linker options
@@ -66,10 +67,13 @@ $(TESTDIR)/test_%: $(OBJDIR)/test_%.o $(LIBDIR)/libtable.a
 	$(CC) $< -o $@ -L$(LIBDIR) -ltable $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -MP -MF $(DEPDIR)/$*.d -c $< -o $@
 
 clean:
 	rm -rf $(BINDIR)/*
 	rm -rf $(OBJDIR)/*
 	rm -rf $(LIBDIR)/*
 	rm -rf $(TESTDIR)/*
+	rm -rf $(DEPDIR)/*	
+
+include $(wildcard $(DEPDIR)/*.d)
