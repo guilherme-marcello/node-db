@@ -185,6 +185,7 @@ int put(char* key, char* value) {
 
     void* buf_key = duplicate_memory(key, strlen(key) + 1, "put");
     if (buf_key == NULL) {
+        destroy_dynamic_memory(buf_value);
         data_destroy(data);
         return -1;
     }
