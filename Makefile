@@ -12,6 +12,7 @@ PROTBUF	:= /usr/include/protobuf-c/
 CC      := gcc
 CFLAGS  := -Wall -O3 -g -I ./$(INCDIR) 
 LDFLAGS	:= -I $(PROTBUF) -lprotobuf-c
+DEPFLAGS := -MMD
 AR		:= ar
 ARFLAGS	:= rcs
 
@@ -67,7 +68,7 @@ $(TESTDIR)/test_%: $(OBJDIR)/test_%.o $(LIBDIR)/libtable.a
 	$(CC) $< -o $@ -L$(LIBDIR) -ltable $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) -MMD -MP -MF $(DEPDIR)/$*.d -c $< -o $@
+	$(CC) $(CFLAGS) $(DEPFLAGS) -MF $(DEPDIR)/$*.d -c $< -o $@
 
 clean:
 	rm -rf $(BINDIR)/*
@@ -76,4 +77,5 @@ clean:
 	rm -rf $(TESTDIR)/*
 	rm -rf $(DEPDIR)/*	
 
+# include all the dependency files that have been generated
 include $(wildcard $(DEPDIR)/*.d)
