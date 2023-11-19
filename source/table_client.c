@@ -1,6 +1,7 @@
 #include "table_client.h"
 #include "client_stub-private.h"
 #include "utils.h"
+#include "stats.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -73,6 +74,16 @@ void interrupt_handler() {
 // ====================================================================================================
 //                                      Client Stub Wrappers
 // ====================================================================================================
+int stats() {
+    struct statistics_t* stats = rtable_stats(client.table);
+    if (stats == NULL)
+        return -1;
+
+    stats_show(stats);
+    stats_destroy(stats);
+    return 0;
+}
+
 int gettable() {
     struct entry_t** entries = rtable_get_table(client.table);
     if (assert_error(
@@ -229,6 +240,8 @@ enum CommandType parse_command(char* token) {
         return GETKEYS;
     else if (!strcmp(token, "gettable"))
         return GETTABLE;
+    else if (!strcmp(token, "stats"))
+        return STATS;
     else if (!strcmp(token, "quit"))
         return QUIT;
     return INVALID;
@@ -270,6 +283,10 @@ void user_interaction() {
             break;
         case GETTABLE:
             if (gettable() == 0)
+                printf("Successful operation.\n");
+            break;
+        case STATS:
+            if (stats() == 0)
                 printf("Successful operation.\n");
             break;
         case QUIT:

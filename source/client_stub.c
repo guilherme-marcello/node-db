@@ -5,6 +5,7 @@
 
 #include "entry.h"
 #include "utils.h"
+#include "stats.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -349,4 +350,29 @@ void rtable_free_entries(struct entry_t **entries) {
         entry_destroy(entry);
         index++;
     }
+}
+
+struct statistics_t* rtable_stats(struct rtable_t* rtable) {
+    if (assert_error(
+        rtable == NULL,
+        "rtable_stats",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_STATS, MESSAGE_T__C_TYPE__CT_NONE);
+    if (msg_wrapper == NULL)
+        return NULL;
+    
+    // send a wait for response...
+    MessageT* received = network_send_receive(rtable, msg_wrapper);
+    if (was_operation_unsuccessful(received)) {
+        message_t__free_unpacked(msg_wrapper, NULL);
+        if (received != NULL)
+            message_t__free_unpacked(received, NULL);
+        return NULL;
+    }
+    struct statistics_t* stats = stats_create(received->stats->op_counter, received->stats->computed_time, received->stats->active_clients);
+    message_t__free_unpacked(received, NULL);
+
+    return stats;
 }
