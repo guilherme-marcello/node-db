@@ -17,18 +17,8 @@ DEPFLAGS := -MMD
 AR		:= ar
 ARFLAGS	:= rcs
 
-# protos
-
-
-
-#$(SRC_DIR)/sdmessage.pb-c.c: sdmessage.proto
-#	protoc-c --c_out=. sdmessage.proto
-#	mv sdmessage.pb-c.c $(SRC_DIR)
-#	mv sdmessage.pb-c.h $(INC_DIR)
-
-
 # sources
-SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c
+SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c $(SRCDIR)/stats.c
 OBJ_GENERIC := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_GENERIC))
 
 SRC_SERVER := $(SRCDIR)/network_server.c $(SRCDIR)/table_skel.c 
