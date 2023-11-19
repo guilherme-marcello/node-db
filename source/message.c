@@ -3,12 +3,36 @@
 #include "sdmessage.pb-c.h"
 #include "entry.h"
 #include "data.h"
+#include "stats.h"
 
 
 #include <stdbool.h>
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
+
+ServerStatsT* wrap_stats(struct statistics_t* stats) {
+    if (assert_error(
+        stats == NULL,
+        "wrap_stats",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+    return wrap_stats_with_data(stats->active_clients, stats->op_counter, stats->computed_time_micros);
+}
+
+ServerStatsT* wrap_stats_with_data(int active_clients, int op_counter, int computed_time) {
+    ServerStatsT* stats_wrapper = create_dynamic_memory(sizeof(ServerStatsT));
+    if (assert_error(
+        stats_wrapper == NULL,
+        "wrap_stats",
+        ERROR_MALLOC
+    )) return NULL;
+    server_stats_t__init(stats_wrapper);
+    stats_wrapper->active_clients = active_clients;
+    stats_wrapper->op_counter = op_counter;
+    stats_wrapper->computed_time = computed_time;
+    return stats_wrapper;
+}
 
 EntryT* wrap_entry_with_data(char* key, struct data_t* data) {
     EntryT* entry_wrapper = create_dynamic_memory(sizeof(EntryT));
@@ -25,6 +49,11 @@ EntryT* wrap_entry_with_data(char* key, struct data_t* data) {
 }
 
 EntryT* wrap_entry(struct entry_t* entry) {
+    if (assert_error(
+        entry == NULL,
+        "wrap_entry",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
     return wrap_entry_with_data(entry->key, entry->value);
 }
 
