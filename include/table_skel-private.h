@@ -15,6 +15,7 @@ int del(MessageT* msg, struct TableServerDatabase* db);
 int size(MessageT* msg, struct TableServerDatabase* db);
 int getkeys(MessageT* msg, struct TableServerDatabase* db);
 int gettable(MessageT* msg, struct TableServerDatabase* db);
+int stats(MessageT* msg, struct TableServerDatabase* db);
 
 
 #endif

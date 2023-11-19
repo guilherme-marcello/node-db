@@ -43,6 +43,9 @@ int invoke(MessageT* msg, struct TableServerDatabase* db) {
         case MESSAGE_T__OPCODE__OP_GETTABLE:
             printf("Received %s request!\n", "gettable");
             return gettable(msg, db);
+        case MESSAGE_T__OPCODE__OP_STATS:
+            printf("Received %s request!\n", "stats");
+            return stats(msg, db);
         default:
             printf("Received unknown request...ignoring!\n");
             return error(msg);
@@ -301,5 +304,27 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
     msg->entries = entries;
     msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_TABLE;
+    return 0;
+}
+
+int stats(MessageT* msg, struct TableServerDatabase* db) {
+    if (assert_error(
+        msg == NULL || db == NULL || db->table == NULL,
+        "invoke",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    if (assert_error(
+        msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
+        "invoke",
+        "Invalid c_type.\n"
+    )) return -1;
+
+    msg->stats = wrap_stats_with_data(db->active_clients, db->op_counter, db->computed_time_micros);
+
+    msg->opcode = MESSAGE_T__OPCODE__OP_STATS + 1;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_STATS;
+
+
     return 0;
 }
