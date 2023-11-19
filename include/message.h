@@ -3,10 +3,29 @@
 
 #include "entry.h"
 #include "data.h"
+#include "stats.h"
 #include "sdmessage.pb-c.h"
 
 #include <unistd.h>
 #include <stdbool.h>
+
+/**
+ * Wrap an ServerStatsT structure with the provided data and return a new ServerStatsT.
+ *
+ * @param active_clients - Amount of active clients
+ * @param op_counter - Amount of operations
+ * @param computed_time - Computed time in micro seconds
+ * @return A new ServerStatsT structure.
+ */
+ServerStatsT* wrap_stats_with_data(int active_clients, int op_counter, int computed_time);
+
+/**
+ * Wrap an existing statistics_t structure into a new ServerStatsT structure.
+ *
+ * @param stats - The statistics_t structure to wrap.
+ * @return A new ServerStatsT structure containing the same data.
+ */
+ServerStatsT* wrap_stats(struct statistics_t* stats);
 
 /**
  * Wrap an EntryT structure with the provided data and return a new EntryT.
