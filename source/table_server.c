@@ -1,5 +1,6 @@
 
 #include "table_server.h"
+#include "database.h"
 #include "utils.h"
 #include "network_server.h"
 #include "table_skel.h"
@@ -9,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 
 #ifndef SERVER_GLOBAL_VARIABLES
 // ====================================================================================================
@@ -27,7 +29,8 @@ struct TableServerDatabase database;
 void SERVER_INIT(char* argv[]) {
     config.valid = false;
     config.listening_fd = network_server_init(options.listening_port);
-    database.table = table_skel_init(options.n_lists);
+    database_init(&database, options.n_lists);
+
     if (assert_error(
         config.listening_fd < 0 || database.table == NULL,
         "SERVER_INIT",
@@ -45,12 +48,7 @@ void SERVER_FREE() {
         "SERVER_FREE",
         "Failed to free listening file descriptor."
     );
-
-    assert_error(
-        table_skel_destroy(database.table) == M_ERROR,
-        "SERVER_FREE",
-        "Failed to free server table."
-    );
+    database_destroy(&database);
 }
 
 #endif

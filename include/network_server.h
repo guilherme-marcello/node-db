@@ -3,7 +3,7 @@
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
-#include "table_server.h"
+#include "database.h"
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.

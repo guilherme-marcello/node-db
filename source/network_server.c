@@ -4,7 +4,7 @@
 #include "sdmessage.pb-c.h"
 #include "utils.h"
 #include "message.h"
-#include "table_server.h"
+#include "database.h"
 
 #include <stdio.h>
 #include <unistd.h>

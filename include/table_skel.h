@@ -3,7 +3,7 @@
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
-#include "table_server.h"
+#include "database.h"
 
 /* Inicia o skeleton da tabela.
  * O main() do servidor deve chamar esta função antes de poder usar a
