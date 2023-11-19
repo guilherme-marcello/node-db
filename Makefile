@@ -6,6 +6,7 @@ OBJDIR  := object
 LIBDIR	:= lib
 TESTDIR	:= tests
 DEPDIR	:= dependencies
+PROTODIR := proto
 PROTBUF	:= /usr/include/protobuf-c/
 
 # Compiler and linker options
@@ -16,6 +17,17 @@ DEPFLAGS := -MMD
 AR		:= ar
 ARFLAGS	:= rcs
 
+# protos
+
+
+
+#$(SRC_DIR)/sdmessage.pb-c.c: sdmessage.proto
+#	protoc-c --c_out=. sdmessage.proto
+#	mv sdmessage.pb-c.c $(SRC_DIR)
+#	mv sdmessage.pb-c.h $(INC_DIR)
+
+
+# sources
 SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c
 OBJ_GENERIC := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_GENERIC))
 
@@ -25,11 +37,25 @@ OBJ_SERVER := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_SERVER))
 SRC_CLIENT := $(SRCDIR)/client_stub.c $(SRCDIR)/network_client.c 
 OBJ_CLIENT := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_CLIENT))
 
+PROTO_FILES = $(wildcard $(PROTODIR)/*.proto)
+SRC_PROTO := $(patsubst $(PROTODIR)/%.proto, $(SRCDIR)/%.pb-c.c, $(PROTO_FILES))
+OBJ_PROTO := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_PROTO))
+
 SRC_MSG := $(SRCDIR)/sdmessage.pb-c.c $(SRCDIR)/message.c
 OBJ_MSG := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_MSG))
 
-.PHONY: all clean libmessages libutils libtable libserver libclient table-server table-client
+.PHONY: all clean generate_protos libmessages libutils libtable libserver libclient table-server table-client
 
+proto_generate:
+	protoc-c --proto_path=$(PROTODIR) --c_out=proto $(PROTO_FILES)
+
+proto_move_headers: $(GENERATED_HEADERS)
+	mv $(PROTO_FILES:.proto=.pb-c.h) $(INCDIR)
+
+proto_move_sources: $(GENERATED_SOURCES)
+	mv $(PROTO_FILES:.proto=.pb-c.c) $(SRCDIR)
+
+generate_protos: proto_generate proto_move_headers proto_move_sources 
 libmessages: $(OBJ_MSG) $(LIBDIR)/libmessages.a
 libutils: $(OBJDIR)/utils.o $(LIBDIR)/libutils.a
 libtable: libutils $(OBJ_GENERIC) $(LIBDIR)/libtable.a
@@ -75,7 +101,9 @@ clean:
 	rm -rf $(OBJDIR)/*
 	rm -rf $(LIBDIR)/*
 	rm -rf $(TESTDIR)/*
-	rm -rf $(DEPDIR)/*	
+	rm -rf $(DEPDIR)/*
+	rm -f $(INCDIR)/*.pb-c.h
+	rm -f $(SRCDIR)/*.pb-c.c
 
 # include all the dependency files that have been generated
 include $(wildcard $(DEPDIR)/*.d)
