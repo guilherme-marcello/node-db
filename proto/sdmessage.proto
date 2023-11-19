@@ -3,6 +3,17 @@
 
 syntax = "proto3";
 
+message server_stats_t {
+  // counter of operations
+  int32 op_counter = 1;
+
+  // number of active clients
+  int32 active_clients = 2;
+
+  // time of computations in microseconds
+  int64 computed_time = 3;
+}
+
 message entry_t			/* Formato da mensagem EntryT */
 {
 	string key		= 1;
@@ -19,6 +30,7 @@ message message_t			/* Formato da mensagem MessageT */
 		OP_SIZE	= 40;
 		OP_GETKEYS	= 50;
 		OP_GETTABLE	= 60;
+		OP_STATS = 70;
 		OP_ERROR	= 99;
 	}
 
@@ -31,6 +43,7 @@ message message_t			/* Formato da mensagem MessageT */
 		CT_KEYS	= 50;
 		CT_TABLE	= 60;
 		CT_NONE	= 70;
+		CT_STATS = 80;
 	}
 
 /* Campos disponíveis na mensagem genérica (cada mensagem concreta, de
@@ -44,6 +57,7 @@ message message_t			/* Formato da mensagem MessageT */
 	sint32		result	= 6;
 	repeated string	keys		= 7;
 	repeated entry_t	entries	= 8;
+	server_stats_t stats = 9;
 };
 
 
