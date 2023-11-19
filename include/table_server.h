@@ -3,9 +3,8 @@
 
 #include "table.h"
 
-struct TableServerData {
+struct TableServerConfig {
     int listening_fd;
-    struct table_t* table;
     int valid;
 };
 
@@ -13,6 +12,13 @@ struct TableServerOptions {
     int listening_port;
     int n_lists;
     int valid;
+};
+
+struct TableServerDatabase {
+    struct table_t* table;
+    int op_counter;
+    int computed_time_micros;
+    int active_clients;
 };
 
 void SERVER_INIT(char* argv[]);

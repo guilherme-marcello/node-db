@@ -4,6 +4,7 @@
 #include "message.h"
 #include "utils.h"
 #include "sdmessage.pb-c.h"
+#include "table_server.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -16,9 +17,9 @@ int table_skel_destroy(struct table_t* table) {
     return table_destroy(table);
 }
 
-int invoke(MessageT* msg, struct table_t* table) {
+int invoke(MessageT* msg, struct TableServerDatabase* db) {
     if (assert_error(
-        msg == NULL || table == NULL,
+        msg == NULL || db == NULL || db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -26,22 +27,22 @@ int invoke(MessageT* msg, struct table_t* table) {
     switch (msg->opcode) {
         case MESSAGE_T__OPCODE__OP_PUT:
             printf("Received %s request!\n", "put");
-            return put(msg, table);        
+            return put(msg, db);        
         case MESSAGE_T__OPCODE__OP_GET:
             printf("Received %s request!\n", "get");
-            return get(msg, table);
+            return get(msg, db);
         case MESSAGE_T__OPCODE__OP_DEL:
             printf("Received %s request!\n", "del");
-            return del(msg, table);
+            return del(msg, db);
         case MESSAGE_T__OPCODE__OP_SIZE:
             printf("Received %s request!\n", "size");
-            return size(msg, table);
+            return size(msg, db);
         case MESSAGE_T__OPCODE__OP_GETKEYS:
             printf("Received %s request!\n", "getkeys");
-            return getkeys(msg, table);
+            return getkeys(msg, db);
         case MESSAGE_T__OPCODE__OP_GETTABLE:
             printf("Received %s request!\n", "gettable");
-            return gettable(msg, table);
+            return gettable(msg, db);
         default:
             printf("Received unknown request...ignoring!\n");
             return error(msg);
@@ -61,13 +62,16 @@ int error(MessageT* msg) {
     return 0;
 }
 
-int put(MessageT* msg, struct table_t* table) {
+int put(MessageT* msg, struct TableServerDatabase* db) {
+
     if (assert_error(
-        msg == NULL || table == NULL || msg->entry == NULL ||
+        msg == NULL || db == NULL || db->table == NULL || msg->entry == NULL ||
         msg->entry->key == NULL || msg->entry->value.data == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    struct table_t* table = db->table;
 
     if (assert_error(
         msg->entry->value.len < 0,
@@ -107,12 +111,14 @@ int put(MessageT* msg, struct table_t* table) {
     return 0;
 }
 
-int get(MessageT* msg, struct table_t* table) {
+int get(MessageT* msg, struct TableServerDatabase* db) {
     if (assert_error(
-        msg == NULL || table == NULL || msg->key == NULL,
+        msg == NULL || db == NULL || db->table == NULL || msg->key == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    struct table_t* table = db->table;
 
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_KEY,
@@ -134,12 +140,14 @@ int get(MessageT* msg, struct table_t* table) {
     return 0;
 }
 
-int del(MessageT* msg, struct table_t* table) {
+int del(MessageT* msg, struct TableServerDatabase* db) {
     if (assert_error(
-        msg == NULL || table == NULL || msg->key == NULL,
+        msg == NULL || db == NULL || db->table == NULL || msg->key == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    struct table_t* table = db->table;
 
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_KEY,
@@ -158,12 +166,14 @@ int del(MessageT* msg, struct table_t* table) {
     return 0;
 }
 
-int size(MessageT* msg, struct table_t* table) {
+int size(MessageT* msg, struct TableServerDatabase* db) {
     if (assert_error(
-        msg == NULL || table == NULL,
+        msg == NULL || db == NULL || db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    struct table_t* table = db->table;
 
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
@@ -185,12 +195,14 @@ int size(MessageT* msg, struct table_t* table) {
     return 0;
 }
 
-int getkeys(MessageT* msg, struct table_t* table) {
+int getkeys(MessageT* msg, struct TableServerDatabase* db) {
     if (assert_error(
-        msg == NULL || table == NULL,
+        msg == NULL || db == NULL || db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+
+    struct table_t* table = db->table;
 
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
@@ -222,12 +234,14 @@ int getkeys(MessageT* msg, struct table_t* table) {
     return 0;
 }
 
-int gettable(MessageT* msg, struct table_t* table) {
+int gettable(MessageT* msg, struct TableServerDatabase* db) {
     if (assert_error(
-        msg == NULL || table == NULL,
+        msg == NULL || db == NULL || db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
+    
+    struct table_t* table = db->table;
 
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,

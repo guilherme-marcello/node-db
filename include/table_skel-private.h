@@ -1,7 +1,7 @@
 #ifndef _SKEL_PRIVATE_H
 #define _SKEL_PRIVATE_H
 
-#include "table.h"
+#include "table_server.h"
 #include "sdmessage.pb-c.h"
 
 
@@ -9,12 +9,12 @@
 // verifying if the message is valid
 // performing action and updating msg with regard to its result
 int error(MessageT* msg);
-int put(MessageT* msg, struct table_t* table);
-int get(MessageT* msg, struct table_t* table);
-int del(MessageT* msg, struct table_t* table);
-int size(MessageT* msg, struct table_t* table);
-int getkeys(MessageT* msg, struct table_t* table);
-int gettable(MessageT* msg, struct table_t* table);
+int put(MessageT* msg, struct TableServerDatabase* db);
+int get(MessageT* msg, struct TableServerDatabase* db);
+int del(MessageT* msg, struct TableServerDatabase* db);
+int size(MessageT* msg, struct TableServerDatabase* db);
+int getkeys(MessageT* msg, struct TableServerDatabase* db);
+int gettable(MessageT* msg, struct TableServerDatabase* db);
 
 
 #endif

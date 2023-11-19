@@ -14,8 +14,9 @@
 // ====================================================================================================
 //                                        Global Variables
 // ====================================================================================================
-struct TableServerData server; // global server struct
+struct TableServerConfig config;
 struct TableServerOptions options;
+struct TableServerDatabase database;
 #endif
 
 #ifndef SERVER_DATA_STRUCT
@@ -24,15 +25,15 @@ struct TableServerOptions options;
 // ====================================================================================================
 
 void SERVER_INIT(char* argv[]) {
-    server.valid = false;
-    server.listening_fd = network_server_init(options.listening_port);
-    server.table = table_skel_init(options.n_lists);
+    config.valid = false;
+    config.listening_fd = network_server_init(options.listening_port);
+    database.table = table_skel_init(options.n_lists);
     if (assert_error(
-        server.listening_fd < 0 || server.table == NULL,
+        config.listening_fd < 0 || database.table == NULL,
         "SERVER_INIT",
         "Failed to initialize table server.\n"
     )) return;
-    server.valid = true;
+    config.valid = true;
 }
 void SERVER_EXIT(int status) {
     SERVER_FREE();
@@ -40,13 +41,13 @@ void SERVER_EXIT(int status) {
 }
 void SERVER_FREE() {
     assert_error(
-        network_server_close(server.listening_fd) == M_ERROR,
+        network_server_close(config.listening_fd) == M_ERROR,
         "SERVER_FREE",
         "Failed to free listening file descriptor."
     );
 
     assert_error(
-        table_skel_destroy(server.table) == M_ERROR,
+        table_skel_destroy(database.table) == M_ERROR,
         "SERVER_FREE",
         "Failed to free server table."
     );
@@ -108,11 +109,11 @@ int main(int argc, char *argv[]) {
     parse_args(argv);
     // init server
     SERVER_INIT(argv);
-    if (!server.valid)
+    if (!config.valid)
         SERVER_EXIT(EXIT_FAILURE);
 
     // Main Loop
-    network_main_loop(server.listening_fd, server.table);
+    network_main_loop(config.listening_fd, &database);
     SERVER_EXIT(EXIT_FAILURE);
 }
 #endif

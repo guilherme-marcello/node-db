@@ -9,9 +9,9 @@
  * then waits for the next request using recursion.
  *
  * @param connection_socket - The socket descriptor for the client connection.
- * @param table - A pointer to the table where the request will be processed.
+ * @param data - A pointer to the server data.
  */
-void process_request(int connection_socket, struct table_t *table);
+void process_request(int connection_socket, struct TableServerDatabase* db);
 
 
 #endif

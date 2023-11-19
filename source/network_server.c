@@ -4,6 +4,7 @@
 #include "sdmessage.pb-c.h"
 #include "utils.h"
 #include "message.h"
+#include "table_server.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -52,7 +53,7 @@ int network_server_init(short port) {
     return fd;
 }
 
-int network_main_loop(int listening_socket, struct table_t *table) {
+int network_main_loop(int listening_socket, struct TableServerDatabase* db) {
     signal(SIGPIPE, SIG_IGN);
     while (true) {
         printf("Server ready, waiting for connections\n");
@@ -63,7 +64,7 @@ int network_main_loop(int listening_socket, struct table_t *table) {
         }
 
         printf("Client connection established.\n");
-        process_request(client_socket, table);
+        process_request(client_socket, db);
         printf("Client connection closed.\n");
         close(client_socket);
     }
@@ -83,13 +84,13 @@ int network_server_close(int socket) {
     return close(socket);
 }
 
-void process_request(int connection_socket, struct table_t *table) {
+void process_request(int connection_socket, struct TableServerDatabase* db) {
     MessageT *request = network_receive(connection_socket);
 
     if (request != NULL) {
         printf("Request received!\n");
         // invoke process...
-        if (invoke(request, table) == -1) {
+        if (invoke(request, db) == -1) {
             message_t__free_unpacked(request, NULL);
         } else {
             // send response...
@@ -99,7 +100,7 @@ void process_request(int connection_socket, struct table_t *table) {
             } else {
                 printf("Sent response to the client! Waiting for the next request...\n");
                 message_t__free_unpacked(request, NULL);
-                process_request(connection_socket, table);  // use recursion to process next request...
+                process_request(connection_socket, db);  // use recursion to process next request...
             }
         }
     }
