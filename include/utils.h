@@ -9,6 +9,7 @@ enum CommandType {
     SIZE,
     GETKEYS,
     GETTABLE,
+    STATS,
     QUIT,
     INVALID
 };
