@@ -14,13 +14,6 @@ struct TableServerOptions {
     int valid;
 };
 
-struct TableServerDatabase {
-    struct table_t* table;
-    int op_counter;
-    int computed_time_micros;
-    int active_clients;
-};
-
 void SERVER_INIT(char* argv[]);
 void SERVER_EXIT(int status);
 void SERVER_FREE();
