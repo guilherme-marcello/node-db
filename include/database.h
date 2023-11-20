@@ -27,5 +27,9 @@ void db_increment_op_counter(struct TableServerDatabase* db);
 void db_add_to_computed_time(struct TableServerDatabase* db, long long delta);
 
 int db_table_put(struct TableServerDatabase* db, char *key, struct data_t *value);
+struct data_t* db_table_get(struct TableServerDatabase* db, char *key);
+int db_table_remove(struct TableServerDatabase* db, char* key);
+int db_table_size(struct TableServerDatabase* db);
+char** db_table_get_keys(struct TableServerDatabase* db);
 
 #endif

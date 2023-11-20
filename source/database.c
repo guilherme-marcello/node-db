@@ -112,3 +112,84 @@ int db_table_put(struct TableServerDatabase* db, char *key, struct data_t *value
     db_add_to_computed_time(db, delta);
     return result;
 }
+
+struct data_t* db_table_get(struct TableServerDatabase* db, char *key) {
+    if (assert_error(
+        db == NULL,
+        "db_table_get",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    struct timeval start_time, end_time;
+    pthread_mutex_lock(&db->table_mutex);
+    gettimeofday(&start_time, NULL);
+    struct data_t* result = table_get(db->table, key);
+    gettimeofday(&end_time, NULL);
+    pthread_mutex_unlock(&db->table_mutex);
+
+    // compute time
+    long long delta = delta_microsec(&start_time, &end_time);
+    db_add_to_computed_time(db, delta);
+    return result;
+}
+
+
+int db_table_remove(struct TableServerDatabase* db, char* key) {
+    if (assert_error(
+        db == NULL,
+        "table_remove",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    struct timeval start_time, end_time;
+    pthread_mutex_lock(&db->table_mutex);
+    gettimeofday(&start_time, NULL);
+    int result = table_remove(db->table, key);
+    gettimeofday(&end_time, NULL);
+    pthread_mutex_unlock(&db->table_mutex);
+
+    // compute time
+    long long delta = delta_microsec(&start_time, &end_time);
+    db_add_to_computed_time(db, delta);
+    return result;
+}
+
+int db_table_size(struct TableServerDatabase* db) {
+    if (assert_error(
+        db == NULL,
+        "db_table_size",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    struct timeval start_time, end_time;
+    pthread_mutex_lock(&db->table_mutex);
+    gettimeofday(&start_time, NULL);
+    int result = table_size(db->table);
+    gettimeofday(&end_time, NULL);
+    pthread_mutex_unlock(&db->table_mutex);
+
+    // compute time
+    long long delta = delta_microsec(&start_time, &end_time);
+    db_add_to_computed_time(db, delta);
+    return result;
+}
+
+char** db_table_get_keys(struct TableServerDatabase* db) {
+    if (assert_error(
+        db == NULL,
+        "db_table_get_keys",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    struct timeval start_time, end_time;
+    pthread_mutex_lock(&db->table_mutex);
+    gettimeofday(&start_time, NULL);
+    char** result = table_get_keys(db->table);
+    gettimeofday(&end_time, NULL);
+    pthread_mutex_unlock(&db->table_mutex);
+
+    // compute time
+    long long delta = delta_microsec(&start_time, &end_time);
+    db_add_to_computed_time(db, delta);
+    return result;
+}

@@ -120,15 +120,13 @@ int get(MessageT* msg, struct TableServerDatabase* db) {
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
 
-    struct table_t* table = db->table;
-
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_KEY,
         "invoke",
         "Invalid c_type.\n"
     )) return -1;
 
-    struct data_t *data = table_get(table, msg->key);
+    struct data_t* data = db_table_get(db, msg->key);
     if (data == NULL)
         return error(msg);
 
@@ -137,6 +135,7 @@ int get(MessageT* msg, struct TableServerDatabase* db) {
     msg->value.data = data->data;
     // destroy only the pointer
     destroy_dynamic_memory(data);
+    db_increment_op_counter(db);
     msg->opcode = MESSAGE_T__OPCODE__OP_GET + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
     return 0;
@@ -149,8 +148,6 @@ int del(MessageT* msg, struct TableServerDatabase* db) {
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
 
-    struct table_t* table = db->table;
-
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_KEY,
         "invoke",
@@ -158,11 +155,12 @@ int del(MessageT* msg, struct TableServerDatabase* db) {
     )) return -1;
 
     if (assert_error(
-        table_remove(table, msg->key) == -1,
+        db_table_remove(db, msg->key) == -1,
         "invoke_get",
         "Failed to remove entry from table.\n"
     )) return error(msg);
 
+    db_increment_op_counter(db);
     msg->opcode = MESSAGE_T__OPCODE__OP_DEL + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
     return 0;
@@ -175,15 +173,13 @@ int size(MessageT* msg, struct TableServerDatabase* db) {
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
 
-    struct table_t* table = db->table;
-
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
         "invoke",
         "Invalid c_type.\n"
     )) return -1;
 
-    msg->result = table_size(table);
+    msg->result = db_table_size(db);
     if (assert_error(
         msg->result < 0,
         "invoke_size",
@@ -191,6 +187,7 @@ int size(MessageT* msg, struct TableServerDatabase* db) {
     )) return error(msg);
 
     // all good!
+    db_increment_op_counter(db);
     msg->opcode = MESSAGE_T__OPCODE__OP_SIZE + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
 
@@ -204,22 +201,20 @@ int getkeys(MessageT* msg, struct TableServerDatabase* db) {
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
 
-    struct table_t* table = db->table;
-
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
         "invoke",
         "Invalid c_type.\n"
     )) return -1;
 
-    char** keys = table_get_keys(table);
+    char** keys = db_table_get_keys(db);
     if (assert_error(
         keys == NULL,
         "invoke_getkeys",
         "Failed to get keys from table.\n"
     )) return error(msg);
 
-    int n_keys = table_size(table);
+    int n_keys = db_table_size(db);
     if (assert_error(
         n_keys < 0,
         "invoke_getkeys",
@@ -231,6 +226,7 @@ int getkeys(MessageT* msg, struct TableServerDatabase* db) {
 
     msg->n_keys = n_keys;
     msg->keys = keys;
+    db_increment_op_counter(db);
     msg->opcode = MESSAGE_T__OPCODE__OP_GETKEYS + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
     return 0;
@@ -243,22 +239,20 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
     
-    struct table_t* table = db->table;
-
     if (assert_error(
         msg->c_type != MESSAGE_T__C_TYPE__CT_NONE,
         "invoke",
         "Invalid c_type.\n"
     )) return -1;
 
-    char** keys = table_get_keys(table);
+    char** keys = db_table_get_keys(db);
     if (assert_error(
         keys == NULL,
         "invoke",
         ERROR_MALLOC
     )) return error(msg);
 
-    int n_entries = table_size(table);
+    int n_entries = db_table_size(db);
     if (assert_error(
         n_entries < 0,
         "invoke",
@@ -273,7 +267,7 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
 
     // with keys and n_keys, iterate over table, setting new entries
     for (int i = 0; i < n_entries; i++) {
-        struct data_t* data = table_get(table, keys[i]);
+        struct data_t* data = db_table_get(db, keys[i]);
         if (data == NULL) {
             // destroy copied entries until now...
             for (int j = 0; j < i; j++)
@@ -301,6 +295,7 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
 
     msg->n_entries = n_entries;
     msg->entries = entries;
+    db_increment_op_counter(db);
     msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_TABLE;
     return 0;
@@ -320,10 +315,7 @@ int stats(MessageT* msg, struct TableServerDatabase* db) {
     )) return -1;
 
     msg->stats = wrap_stats_with_data(db->active_clients, db->op_counter, db->computed_time_micros);
-
     msg->opcode = MESSAGE_T__OPCODE__OP_STATS + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_STATS;
-
-
     return 0;
 }
