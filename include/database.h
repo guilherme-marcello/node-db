@@ -2,6 +2,7 @@
 #define _DATABASE_H /* Módulo Database */
 
 #include "table.h"
+#include "stats.h"
 #include <pthread.h>
 
 
@@ -9,18 +10,15 @@ struct TableServerDatabase {
     struct table_t* table;
     pthread_mutex_t table_mutex;
 
-    int op_counter;
+    struct statistics_t* stats;
     pthread_mutex_t op_counter_mutex;
-    
-    long long computed_time_micros;
     pthread_mutex_t computed_time_mutex;
-
-    int active_clients;
     pthread_mutex_t active_mutex;
 };
 
 void database_init(struct TableServerDatabase* db, int n_lists);
 void database_destroy(struct TableServerDatabase* db);
+
 void db_decrement_active_clients(struct TableServerDatabase* db);
 void db_increment_active_clients(struct TableServerDatabase* db);
 void db_increment_op_counter(struct TableServerDatabase* db);

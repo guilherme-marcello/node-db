@@ -3,6 +3,7 @@
 #include "table_skel.h"
 #include "utils.h"
 #include "aptime.h"
+#include "stats.h"
 
 #include <pthread.h>
 #include <sys/time.h>
@@ -21,6 +22,7 @@ void database_init(struct TableServerDatabase* db, int n_lists) {
     )) return;
 
     db->table = table_skel_init(n_lists);
+    db->stats = stats_create(0, 0, 0);
     pthread_mutex_init(&db->active_mutex, NULL);
     pthread_mutex_init(&db->table_mutex, NULL);
     pthread_mutex_init(&db->op_counter_mutex, NULL);
@@ -29,7 +31,7 @@ void database_init(struct TableServerDatabase* db, int n_lists) {
 
 void database_destroy(struct TableServerDatabase* db) {
     if (assert_error(
-        db == NULL || db->table == NULL,
+        db == NULL || db->table == NULL || db->stats == NULL,
         "database_destroy",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
@@ -39,6 +41,12 @@ void database_destroy(struct TableServerDatabase* db) {
         "database_destroy",
         "Failed to free server table."
     );
+
+    assert_error(
+        stats_destroy(db->stats) == M_ERROR,
+        "database_destroy",
+        "Failed to free server stats."
+    );
     pthread_mutex_destroy(&db->active_mutex);
     pthread_mutex_destroy(&db->table_mutex);
     pthread_mutex_destroy(&db->op_counter_mutex);
@@ -47,37 +55,37 @@ void database_destroy(struct TableServerDatabase* db) {
 
 void db_decrement_active_clients(struct TableServerDatabase* db) {
     if (assert_error(
-        db == NULL,
+        db == NULL || db->stats == NULL,
         "db_decrement_active_clients",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
 
     pthread_mutex_lock(&db->active_mutex);
-    db->active_clients--;
+    db->stats->active_clients--;
     pthread_mutex_unlock(&db->active_mutex);
 }
 
 void db_increment_active_clients(struct TableServerDatabase* db) {
     if (assert_error(
-        db == NULL,
+        db == NULL || db->stats == NULL,
         "db_increment_active_clients",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
     
     pthread_mutex_lock(&db->active_mutex);
-    db->active_clients++;
+    db->stats->active_clients++;
     pthread_mutex_unlock(&db->active_mutex);
 }
 
 void db_increment_op_counter(struct TableServerDatabase* db) {
     if (assert_error(
-        db == NULL,
+        db == NULL || db->stats == NULL,
         "db_increment_op_counter",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
 
     pthread_mutex_lock(&db->op_counter_mutex);
-    db->op_counter++;
+    db->stats->op_counter++;
     pthread_mutex_unlock(&db->op_counter_mutex);
 }
 
@@ -89,7 +97,7 @@ void db_add_to_computed_time(struct TableServerDatabase* db, long long delta) {
     )) return;
 
     pthread_mutex_lock(&db->computed_time_mutex);
-    db->computed_time_micros += delta;
+    db->stats->computed_time_micros += delta;
     pthread_mutex_unlock(&db->computed_time_mutex);
 }
 

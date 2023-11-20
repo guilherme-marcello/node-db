@@ -314,7 +314,7 @@ int stats(MessageT* msg, struct TableServerDatabase* db) {
         "Invalid c_type.\n"
     )) return -1;
 
-    msg->stats = wrap_stats_with_data(db->active_clients, db->op_counter, db->computed_time_micros);
+    msg->stats = wrap_stats_with_data(db->stats->active_clients, db->stats->op_counter, db->stats->computed_time_micros);
     msg->opcode = MESSAGE_T__OPCODE__OP_STATS + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_STATS;
     return 0;
