@@ -228,6 +228,8 @@ int put(char* key, char* value) {
 // ====================================================================================================
 
 enum CommandType parse_command(char* token) {
+    if (!token)
+        return INVALID;
     if (!strcmp(token, "put"))
         return PUT;
     else if (!strcmp(token, "get"))
