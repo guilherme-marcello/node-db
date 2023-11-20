@@ -66,15 +66,12 @@ int error(MessageT* msg) {
 }
 
 int put(MessageT* msg, struct TableServerDatabase* db) {
-
     if (assert_error(
         msg == NULL || db == NULL || db->table == NULL || msg->entry == NULL ||
         msg->entry->key == NULL || msg->entry->value.data == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
-
-    struct table_t* table = db->table;
 
     if (assert_error(
         msg->entry->value.len < 0,
@@ -98,17 +95,19 @@ int put(MessageT* msg, struct TableServerDatabase* db) {
 
     // put
     if (assert_error(
-        table_put(table, msg->entry->key, data) == -1,
+        db_table_put(db, msg->entry->key, data) == -1,
         "invoke",
         "Failed to put entry.\n"
     )) {
         data_destroy(data);
         return error(msg);
     }
+    
 
     // destroy data (since it's copied during put...)
     data_destroy(data);
 
+    db_increment_op_counter(db);
     msg->opcode = MESSAGE_T__OPCODE__OP_PUT + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
     return 0;
