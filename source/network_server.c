@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "message.h"
 #include "database.h"
+#include "client_executor.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -55,21 +56,17 @@ int network_server_init(short port) {
 
 int network_main_loop(int listening_socket, struct TableServerDatabase* db) {
     signal(SIGPIPE, SIG_IGN);
+    printf("Server ready, waiting for connections\n");
     while (true) {
-        printf("Server ready, waiting for connections\n");
         int client_socket = get_client(listening_socket);
         if (client_socket == -1) {
             printf("Failed to accept client connection.\n");
             continue;
         }
 
-        printf("Client connection established.\n");
-        process_request(client_socket, db);
-        printf("Client connection closed.\n");
-        close(client_socket);
+        launch_client_executor(client_socket, db);
     }
-    return -1;
-    
+    return -1;   
 }
 
 MessageT *network_receive(int client_socket) {
