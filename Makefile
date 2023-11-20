@@ -47,7 +47,7 @@ proto_move_sources: $(GENERATED_SOURCES)
 
 generate_protos: proto_generate proto_move_headers proto_move_sources 
 libmessages: $(OBJ_MSG) $(LIBDIR)/libmessages.a
-libutils: $(OBJDIR)/utils.o $(LIBDIR)/libutils.a
+libutils: $(OBJDIR)/utils.o $(OBJDIR)/aptime.o $(LIBDIR)/libutils.a
 libtable: libutils $(OBJ_GENERIC) $(LIBDIR)/libtable.a
 libserver: libmessages libtable $(OBJ_SERVER) $(LIBDIR)/libserver.a
 libclient: libmessages libtable $(OBJ_CLIENT) $(LIBDIR)/libclient.a
@@ -57,7 +57,7 @@ table-client: libclient $(BINDIR)/table-client
 $(LIBDIR)/libmessages.a: $(OBJ_MSG)
 	$(AR) $(ARFLAGS) $@ $^
 
-$(LIBDIR)/libutils.a: $(OBJDIR)/utils.o
+$(LIBDIR)/libutils.a: $(OBJDIR)/utils.o $(OBJDIR)/aptime.o
 	$(AR) $(ARFLAGS) $@ $^
 
 $(LIBDIR)/libtable.a: $(OBJ_GENERIC) 
