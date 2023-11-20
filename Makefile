@@ -36,16 +36,6 @@ OBJ_MSG := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_MSG))
 
 .PHONY: all clean generate_protos libmessages libutils libtable libserver libclient table-server table-client
 
-proto_generate:
-	protoc-c --proto_path=$(PROTODIR) --c_out=proto $(PROTO_FILES)
-
-proto_move_headers: $(GENERATED_HEADERS)
-	mv $(PROTO_FILES:.proto=.pb-c.h) $(INCDIR)
-
-proto_move_sources: $(GENERATED_SOURCES)
-	mv $(PROTO_FILES:.proto=.pb-c.c) $(SRCDIR)
-
-generate_protos: proto_generate proto_move_headers proto_move_sources 
 libmessages: $(OBJ_MSG) $(LIBDIR)/libmessages.a
 libutils: $(OBJDIR)/utils.o $(OBJDIR)/aptime.o $(LIBDIR)/libutils.a
 libtable: libutils $(OBJ_GENERIC) $(LIBDIR)/libtable.a
@@ -53,6 +43,13 @@ libserver: libmessages libtable $(OBJ_SERVER) $(LIBDIR)/libserver.a
 libclient: libmessages libtable $(OBJ_CLIENT) $(LIBDIR)/libclient.a
 table-server: libserver $(BINDIR)/table-server
 table-client: libclient $(BINDIR)/table-client
+
+all: libmessages libtable table-server table-client
+
+$(SRCDIR)/sdmessage.pb-c.c: $(PROTODIR)/sdmessage.proto
+	protoc-c --proto_path=$(PROTODIR) --c_out=proto sdmessage.proto
+	mv $(PROTODIR)/sdmessage.pb-c.h $(INCDIR)
+	mv $(PROTODIR)/sdmessage.pb-c.c $(SRCDIR)
 
 $(LIBDIR)/libmessages.a: $(OBJ_MSG)
 	$(AR) $(ARFLAGS) $@ $^
@@ -68,11 +65,6 @@ $(LIBDIR)/libserver.a: $(OBJ_SERVER)
 
 $(LIBDIR)/libclient.a: $(OBJ_CLIENT)
 	$(AR) $(ARFLAGS) $@ $^ $(LIBDIR)/libtable.a $(LIBDIR)/libutils.a $(LIBDIR)/libmessages.a
-
-
-
-all: libtable table-server table-client
-
 
 $(BINDIR)/table-server: $(OBJDIR)/table_server.o $(LIBDIR)/libserver.a
 	$(CC) $< -o $@ -L$(LIBDIR) -lserver -ltable -lutils -lmessages $(LDFLAGS)
@@ -92,8 +84,9 @@ clean:
 	rm -rf $(LIBDIR)/*
 	rm -rf $(TESTDIR)/*
 	rm -rf $(DEPDIR)/*
-	rm -f $(INCDIR)/*.pb-c.h
-	rm -f $(SRCDIR)/*.pb-c.c
+	rm -rf $(SRCDIR)/*.pb-c.c
+	rm -rf $(INCDIR)/*.pb-c.h
+
 
 # include all the dependency files that have been generated
 include $(wildcard $(DEPDIR)/*.d)
