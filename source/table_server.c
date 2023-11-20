@@ -10,7 +10,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <pthread.h>
 
 #ifndef SERVER_GLOBAL_VARIABLES
 // ====================================================================================================
