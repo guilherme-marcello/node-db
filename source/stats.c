@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-struct statistics_t* stats_create(int op_counter, int computed_time_micros, int active_clients) {
+struct statistics_t* stats_create(int op_counter, long long computed_time_micros, int active_clients) {
     struct statistics_t* stats = create_dynamic_memory(sizeof(struct statistics_t));
     if (assert_error(
         stats == NULL,
