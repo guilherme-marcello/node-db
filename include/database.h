@@ -14,6 +14,8 @@ struct TableServerDatabase {
     pthread_mutex_t op_counter_mutex;
     pthread_mutex_t computed_time_mutex;
     pthread_mutex_t active_mutex;
+
+    pthread_attr_t thread_attr;
 };
 
 void database_init(struct TableServerDatabase* db, int n_lists);

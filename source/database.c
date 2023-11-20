@@ -27,6 +27,14 @@ void database_init(struct TableServerDatabase* db, int n_lists) {
     pthread_mutex_init(&db->table_mutex, NULL);
     pthread_mutex_init(&db->op_counter_mutex, NULL);
     pthread_mutex_init(&db->computed_time_mutex, NULL);
+    pthread_attr_init(&db->thread_attr);
+    // set the thread attribute to detached mode
+    if (assert_error(
+        pthread_attr_setdetachstate(&db->thread_attr, PTHREAD_CREATE_DETACHED) != 0,
+        "database_init",
+        "Failed to pthread_attr_setdetachstate\n"
+    )) return;
+
 }
 
 void database_destroy(struct TableServerDatabase* db) {
@@ -51,6 +59,7 @@ void database_destroy(struct TableServerDatabase* db) {
     pthread_mutex_destroy(&db->table_mutex);
     pthread_mutex_destroy(&db->op_counter_mutex);
     pthread_mutex_destroy(&db->computed_time_mutex);
+    pthread_attr_destroy(&db->thread_attr);
 }
 
 void db_decrement_active_clients(struct TableServerDatabase* db) {
