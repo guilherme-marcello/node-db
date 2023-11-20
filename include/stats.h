@@ -5,7 +5,7 @@
  */
 struct statistics_t {
     int op_counter;
-    int computed_time_micros;
+    long long computed_time_micros;
     int active_clients;
 };
 
@@ -14,7 +14,7 @@ struct statistics_t {
  * reservar memória para os dados.	
  * Retorna a nova estrutura ou NULL em caso de erro.
  */
-struct statistics_t* stats_create(int op_counter, int computed_time_micros, int active_clients); 
+struct statistics_t* stats_create(int op_counter, long long computed_time_micros, int active_clients); 
 
 /* Função que elimina um bloco de dados, apontado pelo parâmetro data,
  * libertando toda a memória por ele ocupada.
@@ -25,5 +25,5 @@ int stats_destroy(struct statistics_t* stats);
 /* Função que imprime uma representação textual de statistics_t */
 void stats_show(struct statistics_t* stats);
 
-#define STATS_STR "Current total of completed operations: %d\nCurrent amount of clients: %d\nCurrent amount of computation time (ms): %d\n"
+#define STATS_STR "Current total of completed operations: %d\nCurrent amount of clients: %d\nCurrent amount of computation time (micro s): %lld\n"
 #endif
