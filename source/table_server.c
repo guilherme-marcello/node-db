@@ -70,17 +70,30 @@ void parse_args(char* argv[]) {
     char *endptr;
     int port = strtol(argv[1], &endptr, 10);
     int n = strtol(argv[2], &endptr, 10);
+    char* zk_connection_str = argv[3];
 
     if (assert_error(
-        *endptr != '\0' || port <= 0 || n <= 0,
+        *endptr != '\0' || port <= 0 || n <= 0 || zk_connection_str == NULL,
         "parse_args",
-        "Failed to parse arguments. Both port and n must be positive integers."
+        "Failed to parse arguments."
     )) return;
 
     options.valid = true;
     options.listening_port = port;
     options.n_lists = n;
+    options.zk_connection_str = zk_connection_str;
     return;
+}
+
+void show_options(struct TableServerOptions* options) {
+    printf("+-----------------------------------+\n");
+    printf("|           Server Options          |\n");
+    printf("+-----------------------------------+\n");
+    printf("| Listening Port:           %7d |\n", options->listening_port);
+    printf("| Number of Lists:          %7d |\n", options->n_lists);
+    printf("| Zookeeper Conn.:  %-15s |\n", options->zk_connection_str);
+    printf("| Valid:                     %-6s |\n", options->valid ? "Yes" : "No");
+    printf("+-----------------------------------+\n");
 }
 
 void interrupt_handler() {
@@ -104,6 +117,7 @@ int main(int argc, char *argv[]) {
     )) return -1;
 
     parse_args(argv);
+    show_options(&options);
     // init server
     SERVER_INIT(argv);
     if (!config.valid)
