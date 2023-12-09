@@ -12,13 +12,16 @@ PROTBUF	:= /usr/include/protobuf-c/
 # Compiler and linker options
 CC      := gcc
 CFLAGS  := -Wall -O3 -g -I ./$(INCDIR) 
-LDFLAGS	:= -I $(PROTBUF) -lprotobuf-c
+LDFLAGS	:= -I $(PROTBUF) -lprotobuf-c -lzookeeper_mt
 DEPFLAGS := -MMD
 AR		:= ar
 ARFLAGS	:= rcs
 
 # sources
-SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c $(SRCDIR)/stats.c
+SRC_UTILS	:= $(SRCDIR)/utils.c $(SRCDIR)/aptime.c
+OBJ_UTILS	:= $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_UTILS))
+
+SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c $(SRCDIR)/stats.c $(SRCDIR)/replicator.c
 OBJ_GENERIC := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_GENERIC))
 
 SRC_SERVER := $(SRCDIR)/network_server.c $(SRCDIR)/table_skel.c $(SRCDIR)/database.c $(SRCDIR)/client_executor.c
@@ -37,7 +40,7 @@ OBJ_MSG := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_MSG))
 .PHONY: all clean generate_protos libmessages libutils libtable libserver libclient table-server table-client
 
 libmessages: $(OBJ_MSG) $(LIBDIR)/libmessages.a
-libutils: $(OBJDIR)/utils.o $(OBJDIR)/aptime.o $(LIBDIR)/libutils.a
+libutils: $(OBJ_UTILS) $(LIBDIR)/libutils.a
 libtable: libutils $(OBJ_GENERIC) $(LIBDIR)/libtable.a
 libserver: libmessages libtable $(OBJ_SERVER) $(LIBDIR)/libserver.a
 libclient: libmessages libtable $(OBJ_CLIENT) $(LIBDIR)/libclient.a

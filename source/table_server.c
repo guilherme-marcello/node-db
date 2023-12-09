@@ -1,6 +1,7 @@
 
 #include "table_server.h"
 #include "database.h"
+#include "replicator.h"
 #include "utils.h"
 #include "network_server.h"
 #include "table_skel.h"
@@ -18,6 +19,7 @@
 struct TableServerConfig config;
 struct TableServerOptions options;
 struct TableServerDatabase database;
+struct TableServerReplicationData replicator;
 #endif
 
 #ifndef SERVER_DATA_STRUCT
@@ -25,13 +27,14 @@ struct TableServerDatabase database;
 //                                    Server Data Struct (TableServerData)
 // ====================================================================================================
 
-void SERVER_INIT(char* argv[]) {
+void SERVER_INIT() {
     config.valid = false;
     config.listening_fd = network_server_init(options.listening_port);
     database_init(&database, options.n_lists);
+    replicator_init(&replicator, options.zk_connection_str);
 
     if (assert_error(
-        config.listening_fd < 0 || database.table == NULL,
+        config.listening_fd < 0 || database.table == NULL || replicator.zh == NULL,
         "SERVER_INIT",
         "Failed to initialize table server.\n"
     )) return;
@@ -119,7 +122,7 @@ int main(int argc, char *argv[]) {
     parse_args(argv);
     show_options(&options);
     // init server
-    SERVER_INIT(argv);
+    SERVER_INIT();
     if (!config.valid)
         SERVER_EXIT(EXIT_FAILURE);
 

@@ -15,7 +15,7 @@ struct TableServerOptions {
     int valid;
 };
 
-void SERVER_INIT(char* argv[]);
+void SERVER_INIT();
 void SERVER_EXIT(int status);
 void SERVER_FREE();
 
