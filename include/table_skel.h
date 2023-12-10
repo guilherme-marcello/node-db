@@ -3,7 +3,7 @@
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
-#include "database.h"
+#include "distributed_database.h"
 
 /* Inicia o skeleton da tabela.
  * O main() do servidor deve chamar esta função antes de poder usar a
@@ -23,6 +23,6 @@ int table_skel_destroy(struct table_t *table);
  * e utiliza a mesma estrutura MessageT para devolver o resultado.
  * Retorna 0 (OK) ou -1 em caso de erro.
 */
-int invoke(MessageT *msg, struct TableServerDatabase* db);
+int invoke(MessageT *msg, struct TableServerDistributedDatabase* ddb);
 
 #endif

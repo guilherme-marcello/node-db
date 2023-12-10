@@ -3,7 +3,7 @@
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
-#include "database.h"
+#include "distributed_database.h"
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -21,7 +21,7 @@ int network_server_init(short port);
  * A função não deve retornar, a menos que ocorra algum erro. Nesse
  * caso retorna -1.
  */
-int network_main_loop(int listening_socket, struct TableServerDatabase* db);
+int network_main_loop(int listening_socket, struct TableServerDistributedDatabase* ddb);
 
 /* A função network_receive() deve:
  * - Ler os bytes da rede, a partir do client_socket indicado;

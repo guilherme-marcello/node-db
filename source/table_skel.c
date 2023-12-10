@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "sdmessage.pb-c.h"
 #include "database.h"
+#include "distributed_database.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -17,9 +18,9 @@ int table_skel_destroy(struct table_t* table) {
     return table_destroy(table);
 }
 
-int invoke(MessageT* msg, struct TableServerDatabase* db) {
+int invoke(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -27,25 +28,25 @@ int invoke(MessageT* msg, struct TableServerDatabase* db) {
     switch (msg->opcode) {
         case MESSAGE_T__OPCODE__OP_PUT:
             printf("Received %s request!\n", "put");
-            return put(msg, db);        
+            return put(msg, ddb);        
         case MESSAGE_T__OPCODE__OP_GET:
             printf("Received %s request!\n", "get");
-            return get(msg, db);
+            return get(msg, ddb);
         case MESSAGE_T__OPCODE__OP_DEL:
             printf("Received %s request!\n", "del");
-            return del(msg, db);
+            return del(msg, ddb);
         case MESSAGE_T__OPCODE__OP_SIZE:
             printf("Received %s request!\n", "size");
-            return size(msg, db);
+            return size(msg, ddb);
         case MESSAGE_T__OPCODE__OP_GETKEYS:
             printf("Received %s request!\n", "getkeys");
-            return getkeys(msg, db);
+            return getkeys(msg, ddb);
         case MESSAGE_T__OPCODE__OP_GETTABLE:
             printf("Received %s request!\n", "gettable");
-            return gettable(msg, db);
+            return gettable(msg, ddb);
         case MESSAGE_T__OPCODE__OP_STATS:
             printf("Received %s request!\n", "stats");
-            return stats(msg, db);
+            return stats(msg, ddb);
         default:
             printf("Received unknown request...ignoring!\n");
             return error(msg);
@@ -65,10 +66,10 @@ int error(MessageT* msg) {
     return 0;
 }
 
-int put(MessageT* msg, struct TableServerDatabase* db) {
+int put(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL || msg->entry == NULL ||
-        msg->entry->key == NULL || msg->entry->value.data == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL ||
+        msg->entry == NULL || msg->entry->key == NULL || msg->entry->value.data == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -95,7 +96,7 @@ int put(MessageT* msg, struct TableServerDatabase* db) {
 
     // put
     if (assert_error(
-        db_table_put(db, msg->entry->key, data) == -1,
+        ddb_table_put(ddb, msg->entry->key, data) == -1,
         "invoke",
         "Failed to put entry.\n"
     )) {
@@ -107,15 +108,15 @@ int put(MessageT* msg, struct TableServerDatabase* db) {
     // destroy data (since it's copied during put...)
     data_destroy(data);
 
-    db_increment_op_counter(db);
+    db_increment_op_counter(ddb->db);
     msg->opcode = MESSAGE_T__OPCODE__OP_PUT + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
     return 0;
 }
 
-int get(MessageT* msg, struct TableServerDatabase* db) {
+int get(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL || msg->key == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL || msg->key == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -126,7 +127,7 @@ int get(MessageT* msg, struct TableServerDatabase* db) {
         "Invalid c_type.\n"
     )) return -1;
 
-    struct data_t* data = db_table_get(db, msg->key);
+    struct data_t* data = ddb_table_get(ddb, msg->key);
     if (data == NULL)
         return error(msg);
 
@@ -135,15 +136,15 @@ int get(MessageT* msg, struct TableServerDatabase* db) {
     msg->value.data = data->data;
     // destroy only the pointer
     destroy_dynamic_memory(data);
-    db_increment_op_counter(db);
+    db_increment_op_counter(ddb->db);
     msg->opcode = MESSAGE_T__OPCODE__OP_GET + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
     return 0;
 }
 
-int del(MessageT* msg, struct TableServerDatabase* db) {
+int del(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL || msg->key == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL || msg->key == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -155,20 +156,20 @@ int del(MessageT* msg, struct TableServerDatabase* db) {
     )) return -1;
 
     if (assert_error(
-        db_table_remove(db, msg->key) == -1,
+        ddb_table_remove(ddb, msg->key) == -1,
         "invoke_get",
         "Failed to remove entry from table.\n"
     )) return error(msg);
 
-    db_increment_op_counter(db);
+    db_increment_op_counter(ddb->db);
     msg->opcode = MESSAGE_T__OPCODE__OP_DEL + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
     return 0;
 }
 
-int size(MessageT* msg, struct TableServerDatabase* db) {
+int size(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -179,7 +180,7 @@ int size(MessageT* msg, struct TableServerDatabase* db) {
         "Invalid c_type.\n"
     )) return -1;
 
-    msg->result = db_table_size(db);
+    msg->result = ddb_table_size(ddb);
     if (assert_error(
         msg->result < 0,
         "invoke_size",
@@ -187,16 +188,16 @@ int size(MessageT* msg, struct TableServerDatabase* db) {
     )) return error(msg);
 
     // all good!
-    db_increment_op_counter(db);
+    db_increment_op_counter(ddb->db);
     msg->opcode = MESSAGE_T__OPCODE__OP_SIZE + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
 
     return 0;
 }
 
-int getkeys(MessageT* msg, struct TableServerDatabase* db) {
+int getkeys(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -207,14 +208,14 @@ int getkeys(MessageT* msg, struct TableServerDatabase* db) {
         "Invalid c_type.\n"
     )) return -1;
 
-    char** keys = db_table_get_keys(db);
+    char** keys = ddb_table_get_keys(ddb);
     if (assert_error(
         keys == NULL,
         "invoke_getkeys",
         "Failed to get keys from table.\n"
     )) return error(msg);
 
-    int n_keys = db_table_size(db);
+    int n_keys = ddb_table_size(ddb);
     if (assert_error(
         n_keys < 0,
         "invoke_getkeys",
@@ -226,15 +227,15 @@ int getkeys(MessageT* msg, struct TableServerDatabase* db) {
 
     msg->n_keys = n_keys;
     msg->keys = keys;
-    db_increment_op_counter(db);
+    db_increment_op_counter(ddb->db);
     msg->opcode = MESSAGE_T__OPCODE__OP_GETKEYS + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
     return 0;
 }
 
-int gettable(MessageT* msg, struct TableServerDatabase* db) {
+int gettable(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -245,14 +246,14 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
         "Invalid c_type.\n"
     )) return -1;
 
-    char** keys = db_table_get_keys(db);
+    char** keys = ddb_table_get_keys(ddb);
     if (assert_error(
         keys == NULL,
         "invoke",
         ERROR_MALLOC
     )) return error(msg);
 
-    int n_entries = db_table_size(db);
+    int n_entries = ddb_table_size(ddb);
     if (assert_error(
         n_entries < 0,
         "invoke",
@@ -267,7 +268,7 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
 
     // with keys and n_keys, iterate over table, setting new entries
     for (int i = 0; i < n_entries; i++) {
-        struct data_t* data = db_table_get(db, keys[i]);
+        struct data_t* data = ddb_table_get(ddb, keys[i]);
         if (data == NULL) {
             // destroy copied entries until now...
             for (int j = 0; j < i; j++)
@@ -295,15 +296,15 @@ int gettable(MessageT* msg, struct TableServerDatabase* db) {
 
     msg->n_entries = n_entries;
     msg->entries = entries;
-    db_increment_op_counter(db);
+    db_increment_op_counter(ddb->db);
     msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_TABLE;
     return 0;
 }
 
-int stats(MessageT* msg, struct TableServerDatabase* db) {
+int stats(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
-        msg == NULL || db == NULL || db->table == NULL,
+        msg == NULL || ddb == NULL || ddb->db == NULL || ddb->db->table == NULL,
         "invoke",
         ERROR_NULL_POINTER_REFERENCE
     )) return -1;
@@ -314,7 +315,7 @@ int stats(MessageT* msg, struct TableServerDatabase* db) {
         "Invalid c_type.\n"
     )) return -1;
 
-    msg->stats = wrap_stats_with_data(db->stats->active_clients, db->stats->op_counter, db->stats->computed_time_micros);
+    msg->stats = wrap_stats_with_data(ddb->db->stats->active_clients, ddb->db->stats->op_counter, ddb->db->stats->computed_time_micros);
     msg->opcode = MESSAGE_T__OPCODE__OP_STATS + 1;
     msg->c_type = MESSAGE_T__C_TYPE__CT_STATS;
     return 0;

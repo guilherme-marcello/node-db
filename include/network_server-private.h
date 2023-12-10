@@ -2,6 +2,7 @@
 #define _NETSERVER_PRIVATE_H
 
 #include "table.h"
+#include "distributed_database.h"
 
 /**
  * Process a request received on the given connection socket. This function
@@ -11,7 +12,7 @@
  * @param connection_socket - The socket descriptor for the client connection.
  * @param data - A pointer to the server data.
  */
-void process_request(int connection_socket, struct TableServerDatabase* db);
+void process_request(int connection_socket, struct TableServerDistributedDatabase* ddb);
 
 
 #endif

@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
         SERVER_EXIT(EXIT_FAILURE);
 
     // Main Loop
-    network_main_loop(config.listening_fd, ddatabase.db);
+    network_main_loop(config.listening_fd, &ddatabase);
     SERVER_EXIT(EXIT_FAILURE);
 }
 #endif

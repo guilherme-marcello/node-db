@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "message.h"
 #include "database.h"
+#include "distributed_database.h"
 #include "client_executor.h"
 
 #include <stdio.h>
@@ -54,7 +55,7 @@ int network_server_init(short port) {
     return fd;
 }
 
-int network_main_loop(int listening_socket, struct TableServerDatabase* db) {
+int network_main_loop(int listening_socket, struct TableServerDistributedDatabase* ddb) {
     signal(SIGPIPE, SIG_IGN);
     printf("Server ready, waiting for connections\n");
     while (true) {
@@ -64,7 +65,7 @@ int network_main_loop(int listening_socket, struct TableServerDatabase* db) {
             continue;
         }
 
-        launch_client_executor(client_socket, db);
+        launch_client_executor(client_socket, ddb);
     }
     return -1;   
 }
@@ -81,13 +82,13 @@ int network_server_close(int socket) {
     return close(socket);
 }
 
-void process_request(int connection_socket, struct TableServerDatabase* db) {
+void process_request(int connection_socket, struct TableServerDistributedDatabase* ddb) {
     MessageT *request = network_receive(connection_socket);
 
     if (request != NULL) {
         printf("Request received!\n");
         // invoke process...
-        if (invoke(request, db) == -1) {
+        if (invoke(request, ddb) == -1) {
             message_t__free_unpacked(request, NULL);
         } else {
             // send response...
@@ -97,7 +98,7 @@ void process_request(int connection_socket, struct TableServerDatabase* db) {
             } else {
                 printf("Sent response to the client! Waiting for the next request...\n");
                 message_t__free_unpacked(request, NULL);
-                process_request(connection_socket, db);  // use recursion to process next request...
+                process_request(connection_socket, ddb);  // use recursion to process next request...
             }
         }
     }
