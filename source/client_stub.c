@@ -78,18 +78,12 @@ int rtable_disconnect(struct rtable_t *rtable) {
     return rtable_destroy(rtable);
 }
 
-
-int rtable_put(struct rtable_t *rtable, struct entry_t *entry) {
+int rtable_put_common(struct rtable_t* rtable, EntryT* entry_wrapper) {
     if (assert_error(
-        rtable == NULL || entry == NULL,
-        "rtable_put",
+        rtable == NULL || entry_wrapper == NULL,
+        "rtable_put_common",
         ERROR_NULL_POINTER_REFERENCE
-    )) return -1;
-
-    // create entry
-    EntryT* entry_wrapper = wrap_entry(entry);
-    if (entry_wrapper == NULL)
-        return -1;
+    )) return -1;  
 
     MessageT* msg_wrapper = wrap_message(MESSAGE_T__OPCODE__OP_PUT, MESSAGE_T__C_TYPE__CT_ENTRY);
     if (msg_wrapper == NULL) {
@@ -110,6 +104,30 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry) {
     }
     
     return 0;
+}
+
+int rtable_put(struct rtable_t *rtable, struct entry_t *entry) {
+    if (assert_error(
+        rtable == NULL || entry == NULL,
+        "rtable_put",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    // create entry
+    EntryT* entry_wrapper = wrap_entry(entry);
+    return rtable_put_common(rtable, entry_wrapper);
+}
+
+int rtable_put_with_data(struct rtable_t *rtable, char* key, struct data_t* data) {
+    if (assert_error(
+        rtable == NULL || key == NULL || data == NULL,
+        "rtable_put_with_data",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return -1;
+
+    // create entry
+    EntryT* entry_wrapper = wrap_entry_with_data(key, data);
+    return rtable_put_common(rtable, entry_wrapper);
 }
 
 struct data_t *rtable_get(struct rtable_t *rtable, char *key) {

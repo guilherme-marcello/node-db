@@ -27,6 +27,12 @@ int rtable_disconnect(struct rtable_t *rtable);
  */
 int rtable_put(struct rtable_t *rtable, struct entry_t *entry);
 
+/* Função para adicionar um elemento na tabela.
+ * Se a key já existe, vai substituir essa entrada pelos novos dados.
+ * Retorna 0 (OK, em adição/substituição), ou -1 (erro).
+ */
+int rtable_put_with_data(struct rtable_t *rtable, char* key, struct data_t* data);
+
 /* Retorna o elemento da tabela com chave key, ou NULL caso não exista
  * ou se ocorrer algum erro.
  */
