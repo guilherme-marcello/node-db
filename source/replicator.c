@@ -107,7 +107,99 @@ char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port) {
     return generated_path;
 }
 
+char* replicator_prev_node(zhandle_t* zh, const char* path, char* child) {
+    if (assert_error(
+        zh == NULL || path == NULL || child == NULL,
+        "replicator_prev_node",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
 
+    // alloc mem for children buffer
+    zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
+    if (assert_error(
+        children_list == NULL,
+        "replicator_prev_node",
+        ERROR_MALLOC
+    )) return NULL;
+
+    // get the list of children synchronously
+    if (assert_error(
+        zoo_get_children(zh, path, 0, children_list) != ZOK,
+        "replicator_prev_node",
+        "Error retrieving list of children.\n"
+    )) {
+        destroy_dynamic_memory(children_list);
+        return NULL;
+    }
+
+    // look after antecessor!
+    char* antecessor = NULL;
+    for (int i = 0; i < children_list->count; ++i) {
+        // complete path of child in order to compare!
+        char full_child_path[strlen(path) + 1 + strlen(children_list->data[i]) + 1];
+        snprintf(full_child_path, sizeof(full_child_path), "%s/%s", path, children_list->data[i]);
+        if (strcmp(child, full_child_path) == 0) {
+            // found child => check if there is a antecessor
+            if (i - 1 >= 0) {
+                // setup buffer for ant. node path
+                char full_antecessor_path[strlen(path) + 1 + strlen(children_list->data[i - 1]) + 1];
+                snprintf(full_antecessor_path, sizeof(full_antecessor_path), "%s/%s", path, children_list->data[i - 1]);
+                antecessor = strdup(full_antecessor_path);
+            }
+
+            break; // interrupt search
+        }
+    }
+    destroy_dynamic_memory(children_list);
+    return antecessor;
+}
+
+char* replicator_next_node(zhandle_t* zh, const char* path, char* child) {
+    if (assert_error(
+        zh == NULL || path == NULL || child == NULL,
+        "replicator_next_node",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return NULL;
+
+    // alloc mem for children buffer
+    zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
+    if (assert_error(
+        children_list == NULL,
+        "replicator_next_node",
+        ERROR_MALLOC
+    )) return NULL;
+
+    // get the list of children synchronously
+    if (assert_error(
+        zoo_get_children(zh, path, 0, children_list) != ZOK,
+        "replicator_next_node",
+        "Error retrieving list of children.\n"
+    )) {
+        destroy_dynamic_memory(children_list);
+        return NULL;
+    }
+
+    // look after sucessor!
+    char* successor = NULL;
+    for (int i = 0; i < children_list->count; ++i) {
+        // complete path of child in order to compare!
+        char full_child_path[strlen(path) + 1 + strlen(children_list->data[i]) + 1];
+        snprintf(full_child_path, sizeof(full_child_path), "%s/%s", path, children_list->data[i]);
+        if (strcmp(child, full_child_path) == 0) {
+            // found child => check if there is a successor
+            if (i + 1 < children_list->count) {
+                // setup buffer for suc. node path
+                char full_sucessor_path[strlen(path) + 1 + strlen(children_list->data[i + 1]) + 1];
+                snprintf(full_sucessor_path, sizeof(full_sucessor_path), "%s/%s", path, children_list->data[i + 1]);
+                successor = strdup(full_sucessor_path);
+            }
+
+            break; // interrupt search
+        }
+    }
+    destroy_dynamic_memory(children_list);
+    return successor;
+}
 
 void replicator_init(struct TableServerReplicationData* replicator, struct TableServerOptions* options) {
     if (assert_error(
@@ -129,8 +221,20 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
     replicator->server_node_path = replicator_create_node(replicator->zh, "127.0.0.1", options->listening_port);
     if (replicator->server_node_path == NULL)
         return;
+    
+    // 4. watch /chain children
 
-    //zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
+    // 5. retrieve next server from zk and setup remote table
+    replicator->next_server_node_path = replicator_next_node(replicator->zh, CHAIN_PATH, replicator->server_node_path);
+    if (replicator->next_server_node_path != NULL) {
+        printf("Setting up remote table from %s to %s\n", replicator->server_node_path, replicator->next_server_node_path);
+    }
+
+    // 6. retrieve prev server from zk and start migration
+    char* prev_server_node_path = replicator_prev_node(replicator->zh, CHAIN_PATH, replicator->server_node_path);
+    if (prev_server_node_path != NULL) {
+        printf("Setting up merge from %s to %s\n", prev_server_node_path, replicator->server_node_path);
+    }
 
     replicator->valid = 1;
     printf("Successfully initialized Replicator!\n");

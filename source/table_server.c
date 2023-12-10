@@ -51,6 +51,7 @@ void SERVER_FREE() {
         "Failed to free listening file descriptor."
     );
     database_destroy(&database);
+    replicator_destroy(&replicator);
 }
 
 #endif
