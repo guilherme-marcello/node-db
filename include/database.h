@@ -3,6 +3,8 @@
 
 #include "table.h"
 #include "stats.h"
+#include "client_stub.h"
+
 #include <pthread.h>
 
 
@@ -20,6 +22,8 @@ struct TableServerDatabase {
 
 void database_init(struct TableServerDatabase* db, int n_lists);
 void database_destroy(struct TableServerDatabase* db);
+
+int db_migrate_table(struct TableServerDatabase* db, struct rtable_t* migration_table);
 
 void db_decrement_active_clients(struct TableServerDatabase* db);
 void db_increment_active_clients(struct TableServerDatabase* db);

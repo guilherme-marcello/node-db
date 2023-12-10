@@ -31,7 +31,7 @@ void SERVER_INIT() {
     config.valid = false;
     config.listening_fd = network_server_init(options.listening_port);
     database_init(&database, options.n_lists);
-    replicator_init(&replicator, &options);
+    replicator_init(&replicator, &database, &options);
 
     if (assert_error(
         config.listening_fd < 0 || database.table == NULL || replicator.zh == NULL,

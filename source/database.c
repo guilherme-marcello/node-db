@@ -1,11 +1,14 @@
 #include "database.h"
 
 #include "table_skel.h"
+#include "client_stub.h"
 #include "utils.h"
 #include "aptime.h"
 #include "stats.h"
+#include "entry.h"
 
 #include <pthread.h>
+#include <stdio.h>
 #include <sys/time.h>
 
 void database_init(struct TableServerDatabase* db, int n_lists) {
@@ -209,4 +212,32 @@ char** db_table_get_keys(struct TableServerDatabase* db) {
     long long delta = delta_microsec(&start_time, &end_time);
     db_add_to_computed_time(db, delta);
     return result;
+}
+
+int db_migrate_table(struct TableServerDatabase* db, struct rtable_t* migration_table) {
+    if (assert_error(
+        db == NULL || db->table == NULL || migration_table == NULL,
+        "db_migrate_table",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return 0;
+
+    struct entry_t** entries = rtable_get_table(migration_table);
+    if (assert_error(
+        entries == NULL,
+        "gettable",
+        "Failed to retrieve remote table.\n"
+    )) return 0;
+
+    // starting with index 0, iterate over entries, updating this server database
+    int index = 0;
+    struct entry_t* entry;
+    while ((entry = entries[index])) {
+        printf("<...> Migrating %s : ", entry->key);
+        print_data(entry->value->data, entry->value->datasize);
+        db_table_put(db, entry->key, entry->value);
+        index++;
+    }
+
+    rtable_free_entries(entries);
+    return 0;
 }

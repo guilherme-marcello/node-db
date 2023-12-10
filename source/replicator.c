@@ -1,6 +1,9 @@
 #include "replicator.h"
 #include "utils.h"
 #include "table_server.h"
+#include "client_stub.h"
+#include "client_stub-private.h"
+#include "database.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -150,6 +153,11 @@ char* replicator_prev_node(zhandle_t* zh, const char* path, char* child) {
             break; // interrupt search
         }
     }
+    // free list
+    for (int j = 0; j < children_list->count; j++) {
+        destroy_dynamic_memory(children_list->data[j]);
+    }
+    destroy_dynamic_memory(children_list->data);
     destroy_dynamic_memory(children_list);
     return antecessor;
 }
@@ -185,7 +193,7 @@ char* replicator_next_node(zhandle_t* zh, const char* path, char* child) {
         // complete path of child in order to compare!
         char full_child_path[strlen(path) + 1 + strlen(children_list->data[i]) + 1];
         snprintf(full_child_path, sizeof(full_child_path), "%s/%s", path, children_list->data[i]);
-        if (strcmp(child, full_child_path) == 0) {
+        if (string_compare(child, full_child_path) == EQUAL) {
             // found child => check if there is a successor
             if (i + 1 < children_list->count) {
                 // setup buffer for suc. node path
@@ -193,15 +201,32 @@ char* replicator_next_node(zhandle_t* zh, const char* path, char* child) {
                 snprintf(full_sucessor_path, sizeof(full_sucessor_path), "%s/%s", path, children_list->data[i + 1]);
                 successor = strdup(full_sucessor_path);
             }
-
             break; // interrupt search
         }
     }
+
+    // free list
+    for (int j = 0; j < children_list->count; j++) {
+        destroy_dynamic_memory(children_list->data[j]);
+    }
+    destroy_dynamic_memory(children_list->data);
     destroy_dynamic_memory(children_list);
     return successor;
 }
 
-void replicator_init(struct TableServerReplicationData* replicator, struct TableServerOptions* options) {
+struct rtable_t* replicator_get_table(struct TableServerReplicationData* replicator, const char* path) {    
+    int size = 32;
+    char node_data[size];
+    if (zoo_get(replicator->zh, path, 0, node_data, &size, NULL) != ZOK)
+        return NULL;
+
+    printf("Node data for %s is %s!\n", path, node_data);
+    return rtable_connect(node_data);    
+}
+
+
+
+void replicator_init(struct TableServerReplicationData* replicator, struct TableServerDatabase* db, struct TableServerOptions* options) {
     if (assert_error(
         replicator == NULL || options == NULL || options->zk_connection_str == NULL,
         "replicator_init",
@@ -234,6 +259,14 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
     char* prev_server_node_path = replicator_prev_node(replicator->zh, CHAIN_PATH, replicator->server_node_path);
     if (prev_server_node_path != NULL) {
         printf("Setting up merge from %s to %s\n", prev_server_node_path, replicator->server_node_path);
+        struct rtable_t* migration_table = replicator_get_table(replicator, prev_server_node_path);
+        if (migration_table != NULL) {
+            db_migrate_table(db, migration_table);
+            rtable_destroy(migration_table);
+            destroy_dynamic_memory(prev_server_node_path);
+        }
+            
+        
     }
 
     replicator->valid = 1;

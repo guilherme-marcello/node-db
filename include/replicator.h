@@ -2,6 +2,7 @@
 #define _REPLICATOR_H /* Módulo para suporte a replicação */
 
 #include "table_server.h"
+#include "database.h"
 
 #include <zookeeper/zookeeper.h>
 
@@ -21,7 +22,7 @@ char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port);
 char* replicator_prev_node(zhandle_t* zh, const char* path, char* child);
 char* replicator_next_node(zhandle_t* zh, const char* path, char* child);
 
-void replicator_init(struct TableServerReplicationData* replicator, struct TableServerOptions* options);
+void replicator_init(struct TableServerReplicationData* replicator, struct TableServerDatabase* db, struct TableServerOptions* options);
 void replicator_destroy(struct TableServerReplicationData* replicator);
 
 #endif
