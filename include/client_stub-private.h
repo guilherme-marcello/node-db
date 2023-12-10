@@ -13,6 +13,4 @@ struct rtable_t* rtable_create(char* address_port);
 
 int rtable_destroy(struct rtable_t *rtable);
 
-int rtable_put_common(struct rtable_t* rtable, EntryT* entry_wrapper);
-
 #endif

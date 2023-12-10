@@ -24,7 +24,7 @@ OBJ_UTILS	:= $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_UTILS))
 SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c $(SRCDIR)/stats.c $(SRCDIR)/replicator.c
 OBJ_GENERIC := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_GENERIC))
 
-SRC_SERVER := $(SRCDIR)/network_server.c $(SRCDIR)/table_skel.c $(SRCDIR)/database.c $(SRCDIR)/client_executor.c $(SRCDIR)/client_stub.c $(SRCDIR)/network_client.c 
+SRC_SERVER := $(SRCDIR)/network_server.c $(SRCDIR)/table_skel.c $(SRCDIR)/database.c $(SRCDIR)/distributed_database.c  $(SRCDIR)/client_executor.c $(SRCDIR)/client_stub.c $(SRCDIR)/network_client.c 
 OBJ_SERVER := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_SERVER)) 
 
 SRC_CLIENT := $(SRCDIR)/client_stub.c $(SRCDIR)/network_client.c 

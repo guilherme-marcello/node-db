@@ -85,7 +85,7 @@ char** ddb_table_get_keys(struct TableServerDistributedDatabase* ddb) {
         ddb == NULL,
         "ddb_table_get_keys",
         ERROR_NULL_POINTER_REFERENCE
-    )) return -1;
+    )) return NULL;
 
     return db_table_get_keys(ddb->db);
 }

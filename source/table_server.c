@@ -1,6 +1,7 @@
 
 #include "table_server.h"
 #include "database.h"
+#include "distributed_database.h"
 #include "replicator.h"
 #include "utils.h"
 #include "network_server.h"
@@ -18,7 +19,7 @@
 // ====================================================================================================
 struct TableServerConfig config;
 struct TableServerOptions options;
-struct TableServerDatabase database;
+struct TableServerDistributedDatabase ddatabase;
 struct TableServerReplicationData replicator;
 #endif
 
@@ -30,11 +31,11 @@ struct TableServerReplicationData replicator;
 void SERVER_INIT() {
     config.valid = false;
     config.listening_fd = network_server_init(options.listening_port);
-    database_init(&database, options.n_lists);
-    replicator_init(&replicator, &database, &options);
+    ddatabase_init(&ddatabase, options.n_lists);
+    replicator_init(&replicator, &ddatabase, &options);
 
     if (assert_error(
-        config.listening_fd < 0 || database.table == NULL || replicator.zh == NULL,
+        config.listening_fd < 0 || ddatabase.db == NULL || ddatabase.db->table == NULL || replicator.zh == NULL,
         "SERVER_INIT",
         "Failed to initialize table server.\n"
     )) return;
@@ -50,7 +51,7 @@ void SERVER_FREE() {
         "SERVER_FREE",
         "Failed to free listening file descriptor."
     );
-    database_destroy(&database);
+    ddatabase_destroy(&ddatabase);
     replicator_destroy(&replicator);
 }
 
@@ -128,7 +129,7 @@ int main(int argc, char *argv[]) {
         SERVER_EXIT(EXIT_FAILURE);
 
     // Main Loop
-    network_main_loop(config.listening_fd, &database);
+    network_main_loop(config.listening_fd, ddatabase.db);
     SERVER_EXIT(EXIT_FAILURE);
 }
 #endif

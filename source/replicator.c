@@ -4,6 +4,7 @@
 #include "client_stub.h"
 #include "client_stub-private.h"
 #include "database.h"
+#include "distributed_database.h"
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -226,9 +227,9 @@ struct rtable_t* replicator_get_table(struct TableServerReplicationData* replica
 
 
 
-void replicator_init(struct TableServerReplicationData* replicator, struct TableServerDatabase* db, struct TableServerOptions* options) {
+void replicator_init(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, struct TableServerOptions* options) {
     if (assert_error(
-        replicator == NULL || options == NULL || options->zk_connection_str == NULL,
+        replicator == NULL || ddb == NULL || ddb->db == NULL || options == NULL || options->zk_connection_str == NULL,
         "replicator_init",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
@@ -261,12 +262,10 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
         printf("Setting up merge from %s to %s\n", prev_server_node_path, replicator->server_node_path);
         struct rtable_t* migration_table = replicator_get_table(replicator, prev_server_node_path);
         if (migration_table != NULL) {
-            db_migrate_table(db, migration_table);
+            db_migrate_table(ddb->db, migration_table);
             rtable_destroy(migration_table);
             destroy_dynamic_memory(prev_server_node_path);
-        }
-            
-        
+        }       
     }
 
     replicator->valid = 1;
