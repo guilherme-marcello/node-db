@@ -2,7 +2,6 @@
 #include "utils.h"
 #include "table_server.h"
 #include "client_stub.h"
-#include "client_stub-private.h"
 #include "database.h"
 #include "distributed_database.h"
 
@@ -11,13 +10,73 @@
 #include <string.h>
 #include <zookeeper/zookeeper.h>
 
-typedef struct String_vector zoo_string;
-
 struct ConnectionContext {
     pthread_cond_t* cond;
     pthread_mutex_t* mutex;
     int* connection_established;
 };
+
+struct ChildUpdateContext {
+    struct TableServerReplicationData* replicator;
+    struct TableServerDistributedDatabase* ddb;
+};
+
+void child_watcher(zhandle_t* wzh, int type, int state, const char* zpath, void* watcher_ctx) {
+    // parse context to update next server pointer!
+    struct ChildUpdateContext* context = (struct ChildUpdateContext*)watcher_ctx;
+
+    // alloc mem for children buffer
+    zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
+    if (assert_error(
+        children_list == NULL,
+        "child_watcher",
+        ERROR_MALLOC
+    )) return;
+
+    if (state == ZOO_CONNECTED_STATE) {
+        if (type == ZOO_CHILD_EVENT) {
+            /* Get the updated children and reset the watch */ 
+            if (assert_error(
+                zoo_wget_children(
+                    context->replicator->zh, 
+                    CHAIN_PATH, 
+                    child_watcher, 
+                    watcher_ctx, 
+                    children_list) != ZOK,
+                "child_watcher",
+                "Error setting watch\n"
+            )) return;
+
+            // get next server
+            char* next_node = replicator_next_node(children_list, CHAIN_PATH, context->replicator->server_node_path);
+            // if there was a defined next server, check if we should change it
+            if (context->replicator->next_server_node_path != NULL) {
+                if (next_node == NULL) { // next_node is null => this server is the tail! disconnect current table
+                    rtable_disconnect(context->ddb->replica);
+                    context->ddb->replica = NULL;
+                } else if (string_compare(context->replicator->next_server_node_path, next_node) != EQUAL) {
+                    // if is not equal => we should change the next server!
+                    rtable_disconnect(context->ddb->replica); // disconnect current next server
+                    context->ddb->replica = replicator_get_table(context->replicator, next_node);
+                }
+
+            }
+            else { // current next server is not defined!
+                if (next_node != NULL) {
+                    context->ddb->replica = replicator_get_table(context->replicator, next_node);
+                }
+            }
+
+            printf("Next server change: (%s) -> (%s)\n", context->replicator->next_server_node_path, next_node);
+            if (context->replicator->next_server_node_path != NULL) {
+                destroy_dynamic_memory(context->replicator->next_server_node_path);
+            }
+            context->replicator->next_server_node_path = next_node;
+        } 
+    }
+    destroy_dynamic_memory(children_list);
+}
+
 
 void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, void* context) {
     // parse context to update variables!
@@ -111,30 +170,12 @@ char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port) {
     return generated_path;
 }
 
-char* replicator_prev_node(zhandle_t* zh, const char* path, char* child) {
+char* replicator_prev_node(zoo_string* children_list, const char* path, char* child) {
     if (assert_error(
-        zh == NULL || path == NULL || child == NULL,
+        children_list == NULL || path == NULL || child == NULL,
         "replicator_prev_node",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
-
-    // alloc mem for children buffer
-    zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
-    if (assert_error(
-        children_list == NULL,
-        "replicator_prev_node",
-        ERROR_MALLOC
-    )) return NULL;
-
-    // get the list of children synchronously
-    if (assert_error(
-        zoo_get_children(zh, path, 0, children_list) != ZOK,
-        "replicator_prev_node",
-        "Error retrieving list of children.\n"
-    )) {
-        destroy_dynamic_memory(children_list);
-        return NULL;
-    }
 
     // look after antecessor!
     char* antecessor = NULL;
@@ -154,39 +195,15 @@ char* replicator_prev_node(zhandle_t* zh, const char* path, char* child) {
             break; // interrupt search
         }
     }
-    // free list
-    for (int j = 0; j < children_list->count; j++) {
-        destroy_dynamic_memory(children_list->data[j]);
-    }
-    destroy_dynamic_memory(children_list->data);
-    destroy_dynamic_memory(children_list);
     return antecessor;
 }
 
-char* replicator_next_node(zhandle_t* zh, const char* path, char* child) {
+char* replicator_next_node(zoo_string* children_list, const char* path, char* child) {
     if (assert_error(
-        zh == NULL || path == NULL || child == NULL,
+        children_list == NULL || path == NULL || child == NULL,
         "replicator_next_node",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
-
-    // alloc mem for children buffer
-    zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
-    if (assert_error(
-        children_list == NULL,
-        "replicator_next_node",
-        ERROR_MALLOC
-    )) return NULL;
-
-    // get the list of children synchronously
-    if (assert_error(
-        zoo_get_children(zh, path, 0, children_list) != ZOK,
-        "replicator_next_node",
-        "Error retrieving list of children.\n"
-    )) {
-        destroy_dynamic_memory(children_list);
-        return NULL;
-    }
 
     // look after sucessor!
     char* successor = NULL;
@@ -205,13 +222,6 @@ char* replicator_next_node(zhandle_t* zh, const char* path, char* child) {
             break; // interrupt search
         }
     }
-
-    // free list
-    for (int j = 0; j < children_list->count; j++) {
-        destroy_dynamic_memory(children_list->data[j]);
-    }
-    destroy_dynamic_memory(children_list->data);
-    destroy_dynamic_memory(children_list);
     return successor;
 }
 
@@ -251,24 +261,46 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
         return;
     
     // 4. watch /chain children
+    struct ChildUpdateContext* watch_context = create_dynamic_memory(sizeof(struct ChildUpdateContext));
+    watch_context->ddb = ddb;
+    watch_context->replicator = replicator;
+
+    zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
+    if (assert_error(
+        children_list == NULL,
+        "replicator_init",
+        ERROR_MALLOC
+    )) return;
+
+    if (ZOK != zoo_wget_children(replicator->zh, CHAIN_PATH, child_watcher, watch_context, children_list)) {
+        fprintf(stderr, "Error setting watch at %s!\n", CHAIN_PATH);
+    }
     
     // 5. retrieve next server from zk and setup remote table
-    replicator->next_server_node_path = replicator_next_node(replicator->zh, CHAIN_PATH, replicator->server_node_path);
+    replicator->next_server_node_path = replicator_next_node(children_list, CHAIN_PATH, replicator->server_node_path);
     if (replicator->next_server_node_path != NULL) {
         printf("Setting up remote table from %s to %s\n", replicator->server_node_path, replicator->next_server_node_path);
     }
 
     // 6. retrieve prev server from zk and start migration
-    char* prev_server_node_path = replicator_prev_node(replicator->zh, CHAIN_PATH, replicator->server_node_path);
+    char* prev_server_node_path = replicator_prev_node(children_list, CHAIN_PATH, replicator->server_node_path);
+    printf("Prev server is %s\n", prev_server_node_path);
     if (prev_server_node_path != NULL) {
         printf("Setting up merge from %s to %s\n", prev_server_node_path, replicator->server_node_path);
         struct rtable_t* migration_table = replicator_get_table(replicator, prev_server_node_path);
         if (migration_table != NULL) {
             db_migrate_table(ddb->db, migration_table);
-            rtable_destroy(migration_table);
+            rtable_disconnect(migration_table);
             destroy_dynamic_memory(prev_server_node_path);
         }       
     }
+
+    // free list
+    for (int j = 0; j < children_list->count; j++) {
+        destroy_dynamic_memory(children_list->data[j]);
+    }
+    destroy_dynamic_memory(children_list->data);
+    destroy_dynamic_memory(children_list);
 
     replicator->valid = 1;
     printf("Successfully initialized Replicator!\n");
