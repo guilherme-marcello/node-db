@@ -21,6 +21,7 @@ struct TableServerReplicationData {
 
 zhandle_t* connect_to_zookeeper(char* zk_connection_str);
 int replicator_create_chain_if_none(zhandle_t* zh, const char* path);
+void handle_next_server_change(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, char* next_node);
 struct rtable_t* replicator_get_table(struct TableServerReplicationData* replicator, const char* path);
 char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port);
 char* replicator_prev_node(zoo_string* children_list, const char* path, char* child);

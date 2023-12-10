@@ -21,6 +21,41 @@ struct ChildUpdateContext {
     struct TableServerDistributedDatabase* ddb;
 };
 
+void handle_next_server_change(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, char* next_node) {
+    if (assert_error(
+        replicator == NULL || ddb == NULL,
+        "handle_next_server_change",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return;
+
+    char* current_next_node = replicator->next_server_node_path;
+
+    if (current_next_node != NULL) {
+        // handle changes when the current next server is defined
+        if (next_node == NULL) {
+            // this server is now the tail! disconnect the current table
+            rtable_disconnect(ddb->replica);
+            ddb->replica = NULL;
+        } else if (string_compare(current_next_node, next_node) != EQUAL) {
+            // if not equal, change the next server
+            rtable_disconnect(ddb->replica); // disconnect the current next server
+            ddb->replica = replicator_get_table(replicator, next_node);
+        }
+    } else {
+        // handle changes when the current next server is not defined
+        if (next_node != NULL) {
+            ddb->replica = replicator_get_table(replicator, next_node);
+        }
+    }
+
+    printf("Next server change: (%s) -> (%s)\n", current_next_node ? current_next_node : "None", next_node ? next_node : "None");
+
+    // clean up memory
+    if (current_next_node != NULL)
+        destroy_dynamic_memory(replicator->next_server_node_path);
+    replicator->next_server_node_path = next_node;
+}
+
 void child_watcher(zhandle_t* wzh, int type, int state, const char* zpath, void* watcher_ctx) {
     // parse context to update next server pointer!
     struct ChildUpdateContext* context = (struct ChildUpdateContext*)watcher_ctx;
@@ -49,30 +84,8 @@ void child_watcher(zhandle_t* wzh, int type, int state, const char* zpath, void*
 
             // get next server
             char* next_node = replicator_next_node(children_list, CHAIN_PATH, context->replicator->server_node_path);
-            // if there was a defined next server, check if we should change it
-            if (context->replicator->next_server_node_path != NULL) {
-                if (next_node == NULL) { // next_node is null => this server is the tail! disconnect current table
-                    rtable_disconnect(context->ddb->replica);
-                    context->ddb->replica = NULL;
-                } else if (string_compare(context->replicator->next_server_node_path, next_node) != EQUAL) {
-                    // if is not equal => we should change the next server!
-                    rtable_disconnect(context->ddb->replica); // disconnect current next server
-                    context->ddb->replica = replicator_get_table(context->replicator, next_node);
-                }
-
-            }
-            else { // current next server is not defined!
-                if (next_node != NULL) {
-                    context->ddb->replica = replicator_get_table(context->replicator, next_node);
-                }
-            }
-
-            printf("Next server change: (%s) -> (%s)\n", context->replicator->next_server_node_path, next_node);
-            if (context->replicator->next_server_node_path != NULL) {
-                destroy_dynamic_memory(context->replicator->next_server_node_path);
-            }
-            context->replicator->next_server_node_path = next_node;
-        } 
+            handle_next_server_change(context->replicator, context->ddb, next_node);
+        }
     }
     destroy_dynamic_memory(children_list);
 }
@@ -236,8 +249,6 @@ struct rtable_t* replicator_get_table(struct TableServerReplicationData* replica
     destroy_dynamic_memory(node_data);
     return table;    
 }
-
-
 
 void replicator_init(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, struct TableServerOptions* options) {
     if (assert_error(
