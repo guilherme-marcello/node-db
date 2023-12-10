@@ -217,12 +217,14 @@ char* replicator_next_node(zhandle_t* zh, const char* path, char* child) {
 
 struct rtable_t* replicator_get_table(struct TableServerReplicationData* replicator, const char* path) {    
     int size = 32;
-    char node_data[size];
+    char* node_data = create_dynamic_memory(size * sizeof(char));
     if (zoo_get(replicator->zh, path, 0, node_data, &size, NULL) != ZOK)
         return NULL;
 
     printf("Node data for %s is %s!\n", path, node_data);
-    return rtable_connect(node_data);    
+    struct rtable_t* table = rtable_connect(node_data);
+    destroy_dynamic_memory(node_data);
+    return table;    
 }
 
 
@@ -249,7 +251,7 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
         return;
     
     // 4. watch /chain children
-
+    
     // 5. retrieve next server from zk and setup remote table
     replicator->next_server_node_path = replicator_next_node(replicator->zh, CHAIN_PATH, replicator->server_node_path);
     if (replicator->next_server_node_path != NULL) {
