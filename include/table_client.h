@@ -55,4 +55,11 @@ int put(char* key, char* value);
                     "\033[1mOptions:\033[0m\n"\
                     "  \033[32m-h\033[0m: Print this usage message\n"
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define CLIENT_LOADING_CLI "[ \033[1;32mInfo\033[0m ] - Loading CLI...\n"
+#define CLIENT_WAITING_FOR_SERVERS "[ \033[1;32mInfo\033[0m ] - Waiting for available servers...\n"
+
 #endif

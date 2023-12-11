@@ -116,4 +116,10 @@ int db_table_size(struct TableServerDatabase* db);
  */
 char** db_table_get_keys(struct TableServerDatabase* db);
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define MIGRATING_KEY_VALUE "[ \033[1;35mMigration\033[0m ] - Migrating %s : "
+
 #endif

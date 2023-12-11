@@ -98,4 +98,11 @@ char* zk_get_last_child(zoo_string* children_list, const char* path);
  */
 void zk_free_list(zoo_string* list);
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define ZK_REGISTER_SERVER "[ \033[1;34mServer Setup\033[0m ] - Registering server...\n"
+#define ZK_ESTABLISHING_REMOTE_SESSION "[ \033[1;34mServer Sync\033[0m ] - Establishing remote connection to \033[1;36m%s\033[0m (%s)\n"
+
 #endif

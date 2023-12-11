@@ -19,7 +19,7 @@ void handle_head_change(struct TableClientReplicationData* replicator, char* hea
             rtable_disconnect(replicator->client->head_table);
         replicator->client->head_table = head ? zk_table_connect(replicator->zh, head) : NULL;
         replicator->head_node_path = head;
-        printf("[ \033[1;34mFault Tolerance\033[0m ] - Write server changed: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n", current_head, head);
+        printf(ZK_CLIENT_HEAD_UPDATE, current_head, head);
     }
 }
 
@@ -37,7 +37,7 @@ void handle_tail_change(struct TableClientReplicationData* replicator, char* tai
             rtable_disconnect(replicator->client->tail_table);
         replicator->client->tail_table = tail ? zk_table_connect(replicator->zh, tail) : NULL;
         replicator->tail_node_path = tail;
-        printf("[ \033[1;34mFault Tolerance\033[0m ] - Read server changed: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n", current_tail, tail);
+        printf(ZK_CLIENT_TAIL_UPDATE, current_tail, tail);
     }
 }
 

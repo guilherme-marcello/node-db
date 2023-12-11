@@ -18,5 +18,12 @@ int getkeys(MessageT* msg, struct TableServerDistributedDatabase* ddb);
 int gettable(MessageT* msg, struct TableServerDistributedDatabase* ddb);
 int stats(MessageT* msg, struct TableServerDistributedDatabase* ddb);
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define SERVER_PARSED_REQUEST "[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n"
+#define SERVER_UNKNOWN_REQUEST "[ \033[1;36mInfo\033[0m ] - Received unknown request... ignoring!\n"
+
 
 #endif

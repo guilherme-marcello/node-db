@@ -50,4 +50,11 @@ void handle_tail_change(struct TableClientReplicationData* replicator, char* tai
  */
 void client_child_watcher(zhandle_t* wzh, int type, int state, const char* zpath, void* watcher_ctx);
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define ZK_CLIENT_HEAD_UPDATE "[ \033[1;34mFault Tolerance\033[0m ] - Write server changed: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n"
+#define ZK_CLIENT_TAIL_UPDATE "[ \033[1;34mFault Tolerance\033[0m ] - Read server changed: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n"
+
 #endif

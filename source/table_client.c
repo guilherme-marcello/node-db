@@ -274,11 +274,11 @@ enum CommandType parse_command(char* token) {
 
 
 void user_interaction() {
-    printf("[ \033[1;32mInfo\033[0m ] - Loading CLI...\n");
+    printf(CLIENT_LOADING_CLI);
     char input[MAX_INPUT_LENGTH]; // user input buffer
     while (!client.terminate) {
         while(client.head_table == NULL) {
-            printf("[ \033[1;32mInfo\033[0m ] - Waiting for available servers...\n");
+            printf(CLIENT_WAITING_FOR_SERVERS);
             sleep(5);
         }
         printf(CLIENT_SHELL, options.zk_connection_str, replicator.head_node_path);

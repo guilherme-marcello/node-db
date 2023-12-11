@@ -121,7 +121,7 @@ int ensure_chain_exists(zhandle_t* zh, const char* path) {
 }
 
 char* zk_register_server(zhandle_t* zh, char* host_str, int host_port) {
-    printf("[ \033[1;34mServer Setup\033[0m ] - Registering server...\n");
+    printf(ZK_REGISTER_SERVER);
     // alloc mem for the new_path buffer
     char* generated_path = create_dynamic_memory(1024);
     if (assert_error(
@@ -218,7 +218,7 @@ struct rtable_t* zk_table_connect(zhandle_t* zh, const char* path) {
         return NULL;
     }
 
-    printf("[ \033[1;34mServer Sync\033[0m ] - Establishing remote connection to \033[1;36m%s\033[0m (%s)\n", path, node_data);
+    printf(ZK_ESTABLISHING_REMOTE_SESSION, path, node_data);
     struct rtable_t* table = rtable_connect(node_data);
     destroy_dynamic_memory(node_data);
     return table;    

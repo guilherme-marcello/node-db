@@ -7,6 +7,7 @@
 #include "address.h"
 
 #include <zookeeper/zookeeper.h>
+#include <stdbool.h>
 
 void handle_next_server_change(struct TableServerReplicationData* replicator, char* next_node) {
     if (assert_error(
@@ -17,29 +18,32 @@ void handle_next_server_change(struct TableServerReplicationData* replicator, ch
 
     char* current_next_node = replicator->next_server_node_path;
 
+    int changed = false;
     if (current_next_node != NULL) {
         // handle changes when the current next server is defined
         if (next_node == NULL) {
             // this server is now the tail! disconnect the current table
             rtable_disconnect(replicator->ddb->replica);
             replicator->ddb->replica = NULL;
+            changed = true;
         } else if (string_compare(current_next_node, next_node) != EQUAL) {
             // if not equal, change the next server
             rtable_disconnect(replicator->ddb->replica); // disconnect the current next server
             replicator->ddb->replica = zk_table_connect(replicator->zh, next_node);
+            changed = true;
         }
     } else {
         // handle changes when the current next server is not defined
         if (next_node != NULL) {
             replicator->ddb->replica = zk_table_connect(replicator->zh, next_node);
+            changed = true;
         }
     }
 
-    printf("[ \033[1;34mServer Replication\033[0m ] - Next server change: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n", current_next_node ? current_next_node : "None", next_node ? next_node : "None");
-
+    if (changed)
+        printf(ZK_SERVER_REPLICA_UPDATE, current_next_node ? current_next_node : "None", next_node ? next_node : "None");
     // clean up memory
-    if (current_next_node != NULL)
-        destroy_dynamic_memory(replicator->next_server_node_path);
+    destroy_dynamic_memory(replicator->next_server_node_path);
     replicator->next_server_node_path = next_node;
 }
 
@@ -120,23 +124,23 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
     // 5. retrieve next server from zk and setup remote table
     replicator->next_server_node_path = zk_find_successor_node(children_list, CHAIN_PATH, replicator->server_node_path);
     if (replicator->next_server_node_path != NULL) {
-        printf("Setting up remote table from %s to %s\n", replicator->server_node_path, replicator->next_server_node_path);
+        printf(ZK_SERVER_SET_REPLICA, replicator->next_server_node_path, replicator->server_node_path);
     }
 
     // 6. retrieve prev server from zk and start migration
-    printf("[ \033[1;34mServer Sync\033[0m ] - Checking if there is an available server for synchronization...\n");
+    printf(ZK_SERVER_CHECKING_SYNC);
     char* prev_server_node_path = zk_find_previous_node(children_list, CHAIN_PATH, replicator->server_node_path);
     if (prev_server_node_path != NULL) {
-        printf("[ \033[1;34mServer Sync\033[0m ] - Setting up synchronization with server \033[1;36m%s\033[0m\n", prev_server_node_path);
+        printf(ZK_SERVER_SET_SYNC, prev_server_node_path);
         struct rtable_t* migration_table = zk_table_connect(replicator->zh, prev_server_node_path);
         if (migration_table != NULL) {
-            printf("[ \033[1;34mServer Sync\033[0m ] - Established temporary remote session to \033[1;36m%s\033[0m. Starting synchronization...\n", prev_server_node_path);
+            printf(ZK_SERVER_SESSION_OK_FOR_SYNC, prev_server_node_path);
             db_migrate_table(ddb->db, migration_table);
             rtable_disconnect(migration_table);
             destroy_dynamic_memory(prev_server_node_path);
         }
     }
-    printf("[ \033[1;34mServer Sync\033[0m ] - Completed synchronization with other servers (if any)\n");
+    printf(ZK_SERVER_COMPLETED_SYNC);
     // free list
     zk_free_list(children_list);
     replicator->valid = 1;

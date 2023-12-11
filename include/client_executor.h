@@ -19,4 +19,11 @@ void* thread_process_request(void* _args);
 void launch_client_executor(int client_socket, struct TableServerDistributedDatabase *ddb);
 
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define CLIENT_CONNECTION_OK "[ \033[1;36mInfo\033[0m ] - Client connection established.\n"
+#define CLIENT_CONNECTION_CLOSED "[ \033[1;36mInfo\033[0m ] - Client connection closed.\n"
+
 #endif

@@ -68,4 +68,10 @@ int ddb_table_size(struct TableServerDistributedDatabase* ddb);
  */
 char** ddb_table_get_keys(struct TableServerDistributedDatabase* ddb);
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define DB_FORWARDING_OPERATION "[ \033[1;33mDatabase\033[0m ] - Forwarding operation to replica/next server (%s:%d)\n"
+
 #endif

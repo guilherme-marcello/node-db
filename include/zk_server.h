@@ -51,4 +51,15 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
  */
 void zk_server_destroy(struct TableServerReplicationData* replicator);
 
+// ====================================================================================================
+//                                            MESSAGES
+// ====================================================================================================
+
+#define ZK_SERVER_REPLICA_UPDATE "[ \033[1;34mServer Replication\033[0m ] - Next server change: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n"
+#define ZK_SERVER_SET_REPLICA "[ \033[1;34mServer Sync\033[0m ] Setting up %s as next server of %s\n"
+#define ZK_SERVER_CHECKING_SYNC "[ \033[1;34mServer Sync\033[0m ] - Checking if there is an available server for synchronization...\n"
+#define ZK_SERVER_SET_SYNC "[ \033[1;34mServer Sync\033[0m ] - Setting up synchronization with server \033[1;36m%s\033[0m\n"
+#define ZK_SERVER_SESSION_OK_FOR_SYNC "[ \033[1;34mServer Sync\033[0m ] - Established temporary remote session to \033[1;36m%s\033[0m. Starting synchronization...\n"
+#define ZK_SERVER_COMPLETED_SYNC "[ \033[1;34mServer Sync\033[0m ] - Completed synchronization with other servers (if any)\n"
+
 #endif

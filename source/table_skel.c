@@ -27,28 +27,28 @@ int invoke(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
 
     switch (msg->opcode) {
         case MESSAGE_T__OPCODE__OP_PUT:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "put");
+            printf(SERVER_PARSED_REQUEST, "put");
             return put(msg, ddb);        
         case MESSAGE_T__OPCODE__OP_GET:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "get");
+            printf(SERVER_PARSED_REQUEST, "get");
             return get(msg, ddb);
         case MESSAGE_T__OPCODE__OP_DEL:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "del");
+            printf(SERVER_PARSED_REQUEST, "del");
             return del(msg, ddb);
         case MESSAGE_T__OPCODE__OP_SIZE:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "size");
+            printf(SERVER_PARSED_REQUEST, "size");
             return size(msg, ddb);
         case MESSAGE_T__OPCODE__OP_GETKEYS:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "getkeys");
+            printf(SERVER_PARSED_REQUEST, "getkeys");
             return getkeys(msg, ddb);
         case MESSAGE_T__OPCODE__OP_GETTABLE:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "gettable");
+            printf(SERVER_PARSED_REQUEST, "gettable");
             return gettable(msg, ddb);
         case MESSAGE_T__OPCODE__OP_STATS:
-            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "stats");
+            printf(SERVER_PARSED_REQUEST, "stats");
             return stats(msg, ddb);
         default:
-            printf("[ \033[1;36mInfo\033[0m ] - Received unknown request... ignoring!\n");
+            printf(SERVER_UNKNOWN_REQUEST);
             return error(msg);
     }
     return 0;
