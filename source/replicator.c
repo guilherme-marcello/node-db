@@ -11,17 +11,6 @@
 #include <string.h>
 #include <zookeeper/zookeeper.h>
 
-struct ConnectionContext {
-    pthread_cond_t* cond;
-    pthread_mutex_t* mutex;
-    int* connection_established;
-};
-
-struct ChildUpdateContext {
-    struct TableServerReplicationData* replicator;
-    struct TableServerDistributedDatabase* ddb;
-};
-
 void handle_next_server_change(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, char* next_node) {
     if (assert_error(
         replicator == NULL || ddb == NULL,
@@ -282,6 +271,7 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
     
     // 4. watch /chain children
     struct ChildUpdateContext* watch_context = create_dynamic_memory(sizeof(struct ChildUpdateContext));
+    replicator->child_update_context = watch_context;
     watch_context->ddb = ddb;
     watch_context->replicator = replicator;
 
@@ -332,7 +322,10 @@ void replicator_destroy(struct TableServerReplicationData* replicator) {
         replicator == NULL,
         "replicator_destroy",
         ERROR_NULL_POINTER_REFERENCE
-    )) return;    
+    )) return;
 
+    destroy_dynamic_memory(replicator->server_node_path);
+    destroy_dynamic_memory(replicator->next_server_node_path);
+    destroy_dynamic_memory(replicator->child_update_context);
     zookeeper_close(replicator->zh);
 }

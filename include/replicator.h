@@ -10,12 +10,24 @@
 #define CHAIN_PATH "/chain"
 #define NODE_PATH "/chain/node"
 
+struct ConnectionContext {
+    pthread_cond_t* cond;
+    pthread_mutex_t* mutex;
+    int* connection_established;
+};
+
+struct ChildUpdateContext {
+    struct TableServerReplicationData* replicator;
+    struct TableServerDistributedDatabase* ddb;
+};
+
 typedef struct String_vector zoo_string;
 
 struct TableServerReplicationData {
     zhandle_t* zh;
     char* server_node_path;
     char* next_server_node_path;
+    struct ChildUpdateContext* child_update_context;
     int valid;
 };
 
