@@ -30,12 +30,6 @@ void CLIENT_INIT() {
     client.valid = false;
     client.terminate = false;
     zk_client_init(&replicator, &client, &options);
-    //client.table = rtable_connect(argv[1]);
-    if (assert_error(
-        client.head_table == NULL && client.tail_table == NULL,
-        "CLIENT_INIT",
-        "Failed to initialize table client.\n"
-    )) return;
     client.valid = true;
 }
 void CLIENT_EXIT(int status) {
@@ -283,9 +277,14 @@ enum CommandType parse_command(char* token) {
 
 
 void user_interaction() {
+    printf("[ \033[1;32mInfo\033[0m ] - Loading CLI...\n");
     char input[MAX_INPUT_LENGTH]; // user input buffer
     while (!client.terminate) {
-        printf(CLIENT_SHELL, client.head_table->server_address, client.head_table->server_port);
+        while(client.head_table == NULL) {
+            printf("[ \033[1;32mInfo\033[0m ] - Waiting for available servers...\n");
+            sleep(5);
+        }
+        printf(CLIENT_SHELL, options.zk_connection_str, replicator.head_node_path);
         if (fgets(input, sizeof(input), stdin) == NULL)
             break;
 

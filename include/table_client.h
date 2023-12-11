@@ -46,7 +46,7 @@ int put(char* key, char* value);
 // ====================================================================================================
 #define TC_ERROR_ARGS "\033[0;31m[!] Error:\033[0m Number of arguments is should be 2. Execute `table-server -h` for 'help'.\n"
 
-#define CLIENT_SHELL "\033[1;32mtable-client:%s:%d~/\033[0m$ \033[?12;25h"
+#define CLIENT_SHELL "\033[1;32mtable-client[%s]\033[0m:\033[1;34m~%s\033[0m$ \033[?12;25h"
 #define EXIT_MESSAGE "Bye, bye!\n"
 
 // Program arguments-related constants
