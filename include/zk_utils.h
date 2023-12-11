@@ -2,6 +2,7 @@
 #define _ZK_UTILS_H /* Module for replication support */
 
 #include <zookeeper/zookeeper.h>
+#include <pthread.h>
 
 #define CHAIN_PATH "/chain"
 #define NODE_PATH "/chain/node"
