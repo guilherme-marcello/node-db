@@ -30,7 +30,7 @@ struct rtable_t* rtable_create(char* address_port) {
         ERROR_MALLOC
     )) return NULL;
 
-    table->server_address = ip_str;
+    table->server_address = strdup(ip_str);
     table->server_port = atoi(port_str);
     table->sockfd = -1;
     

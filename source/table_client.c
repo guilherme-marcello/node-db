@@ -2,6 +2,7 @@
 #include "client_stub-private.h"
 #include "utils.h"
 #include "stats.h"
+#include "zk_client.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -16,6 +17,8 @@
 //                                        Global Variables
 // ====================================================================================================
 struct TableClientData client; // global client struct
+struct TableClientOptions options;
+struct TableClientReplicationData replicator;
 #endif
 
 #ifndef CLIENT_DATA_STRUCT
@@ -23,12 +26,13 @@ struct TableClientData client; // global client struct
 //                                    Server Data Struct (TableServerData)
 // ====================================================================================================
 
-void CLIENT_INIT(char* argv[]) {
+void CLIENT_INIT() {
     client.valid = false;
     client.terminate = false;
-    client.table = rtable_connect(argv[1]);
+    zk_client_init(&replicator, &client, &options);
+    //client.table = rtable_connect(argv[1]);
     if (assert_error(
-        client.table == NULL,
+        client.head_table == NULL && client.tail_table == NULL,
         "CLIENT_INIT",
         "Failed to initialize table client.\n"
     )) return;
@@ -39,13 +43,20 @@ void CLIENT_EXIT(int status) {
     exit(status);
 }
 void CLIENT_FREE() {
-    if (client.table == NULL)
-        return;
-    assert_error(
-        rtable_disconnect(client.table) == M_ERROR,
-        "CLIENT_FREE",
-        "Failed to disconnect from remote table."
-    );
+    if (client.head_table != NULL) {
+        assert_error(
+            rtable_disconnect(client.head_table) == M_ERROR,
+            "CLIENT_FREE",
+            "Failed to disconnect from remote head table."
+        );
+    }
+    if (client.tail_table != NULL) {
+        assert_error(
+            rtable_disconnect(client.tail_table) == M_ERROR,
+            "CLIENT_FREE",
+            "Failed to disconnect from remote head table."
+        );
+    }
 }
 
 #endif
@@ -58,13 +69,33 @@ void CLIENT_FREE() {
 void usage_menu(int argc, char** argv) {
     if (argc == 2 && strcmp(argv[1], "-h") == 0) {
         // print usage string
-        printf(USAGE_STR);
+        printf(TC_USAGE_STR);
         // exit program
         exit(EXIT_SUCCESS);
     }
 }
 
-void interrupt_handler() {
+void tc_parse_args(char* argv[]) {
+    if (assert_error(
+        argv == NULL || argv[1] == NULL,
+        "parse_args",
+        ERROR_NULL_POINTER_REFERENCE
+    )) return;
+
+    options.zk_connection_str = argv[1];
+    options.valid = true;
+}
+
+void tc_show_options(struct TableClientOptions* options) {
+    printf("+-----------------------------------+\n");
+    printf("|           Client Options          |\n");
+    printf("+-----------------------------------+\n");
+    printf("| Zookeeper Conn.:  %-15s |\n", options->zk_connection_str);
+    printf("| Valid:                     %-6s |\n", options->valid ? "Yes" : "No");
+    printf("+-----------------------------------+\n");
+}
+
+void tc_interrupt_handler() {
     CLIENT_EXIT(0);
 }
 
@@ -75,7 +106,7 @@ void interrupt_handler() {
 //                                      Client Stub Wrappers
 // ====================================================================================================
 int stats() {
-    struct statistics_t* stats = rtable_stats(client.table);
+    struct statistics_t* stats = rtable_stats(client.tail_table);
     if (stats == NULL)
         return -1;
 
@@ -85,7 +116,7 @@ int stats() {
 }
 
 int gettable() {
-    struct entry_t** entries = rtable_get_table(client.table);
+    struct entry_t** entries = rtable_get_table(client.tail_table);
     if (assert_error(
         entries == NULL,
         "gettable",
@@ -106,7 +137,7 @@ int gettable() {
 }
 
 int getkeys() {
-    char** keys = rtable_get_keys(client.table);
+    char** keys = rtable_get_keys(client.tail_table);
     if (assert_error(
         keys == NULL,
         "getkeys",
@@ -126,7 +157,7 @@ int getkeys() {
 }
 
 int size() {
-    int size = rtable_size(client.table);
+    int size = rtable_size(client.tail_table);
     if (assert_error(
         size < 0,
         "size",
@@ -146,7 +177,7 @@ int del(char *key) {
 
     printf("Deleting key %s...\n", key);
     if (assert_error(
-        rtable_del(client.table, key) < 0,
+        rtable_del(client.head_table, key) < 0,
         "del",
         "Failed to delete key from remote table.\n"
     )) return -1;
@@ -163,7 +194,7 @@ int get(char *key) {
 
     printf("Getting key %s...\n", key);
     // retrieve data from remote table
-    struct data_t* data = rtable_get(client.table, key);
+    struct data_t* data = rtable_get(client.tail_table, key);
 
     if (assert_error(
         data == NULL,
@@ -210,7 +241,7 @@ int put(char* key, char* value) {
 
     // send request to server
     if (assert_error(
-        rtable_put(client.table, entry) == -1,
+        rtable_put(client.head_table, entry) == -1,
         "put",
         "Failed to put entry in remote table.\n"
     )) {
@@ -254,7 +285,7 @@ enum CommandType parse_command(char* token) {
 void user_interaction() {
     char input[MAX_INPUT_LENGTH]; // user input buffer
     while (!client.terminate) {
-        printf(CLIENT_SHELL, client.table->server_address, client.table->server_port);
+        printf(CLIENT_SHELL, client.head_table->server_address, client.head_table->server_port);
         if (fgets(input, sizeof(input), stdin) == NULL)
             break;
 
@@ -309,18 +340,22 @@ void user_interaction() {
 //                                              Main
 // ====================================================================================================
 int main(int argc, char *argv[]) {
-    signal(SIGINT, interrupt_handler);
+    signal(SIGINT, tc_interrupt_handler);
     
     // launch usage menu
     usage_menu(argc, argv);
     if (assert_error(
-        argc != NUMBER_OF_ARGS,
+        argc != TC_NUMBER_OF_ARGS,
         "main",
-        ERROR_ARGS
+        TC_ERROR_ARGS
     )) CLIENT_EXIT(EXIT_FAILURE);
 
+    tc_parse_args(argv);
+    tc_show_options(&options);
+    if (!options.valid)
+        CLIENT_EXIT(EXIT_FAILURE);
     // init client
-    CLIENT_INIT(argv);
+    CLIENT_INIT();
     if (!client.valid)
         CLIENT_EXIT(EXIT_FAILURE);
 

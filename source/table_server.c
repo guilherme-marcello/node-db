@@ -2,7 +2,7 @@
 #include "table_server.h"
 #include "database.h"
 #include "distributed_database.h"
-#include "replicator.h"
+#include "zk_server.h"
 #include "utils.h"
 #include "network_server.h"
 #include "table_skel.h"
@@ -32,7 +32,7 @@ void SERVER_INIT() {
     config.valid = false;
     config.listening_fd = network_server_init(options.listening_port);
     ddatabase_init(&ddatabase, options.n_lists);
-    replicator_init(&replicator, &ddatabase, &options);
+    zk_server_init(&replicator, &ddatabase, &options);
 
     if (assert_error(
         config.listening_fd < 0 || ddatabase.db == NULL || ddatabase.db->table == NULL || replicator.zh == NULL,
@@ -52,7 +52,7 @@ void SERVER_FREE() {
         "Failed to free listening file descriptor."
     );
     ddatabase_destroy(&ddatabase);
-    replicator_destroy(&replicator);
+    zk_server_destroy(&replicator);
 }
 
 #endif
@@ -65,13 +65,13 @@ void SERVER_FREE() {
 void usage_menu(int argc, char** argv) {
     if (argc == 2 && strcmp(argv[1], "-h") == 0) {
         // print usage string
-        printf(USAGE_STR);
+        printf(TS_USAGE_STR);
         // exit program
         exit(EXIT_SUCCESS);
     }
 }
 
-void parse_args(char* argv[]) { 
+void ts_parse_args(char* argv[]) { 
     char *endptr;
     int port = strtol(argv[1], &endptr, 10);
     int n = strtol(argv[2], &endptr, 10);
@@ -90,7 +90,7 @@ void parse_args(char* argv[]) {
     return;
 }
 
-void show_options(struct TableServerOptions* options) {
+void ts_show_options(struct TableServerOptions* options) {
     printf("+-----------------------------------+\n");
     printf("|           Server Options          |\n");
     printf("+-----------------------------------+\n");
@@ -101,7 +101,7 @@ void show_options(struct TableServerOptions* options) {
     printf("+-----------------------------------+\n");
 }
 
-void interrupt_handler() {
+void ts_interrupt_handler() {
     SERVER_EXIT(0);
 }
 #endif
@@ -111,18 +111,20 @@ void interrupt_handler() {
 //                                              Main
 // ====================================================================================================
 int main(int argc, char *argv[]) {
-    signal(SIGINT, interrupt_handler);
+    signal(SIGINT, ts_interrupt_handler);
 
     // launch usage menu
     usage_menu(argc, argv);
     if (assert_error(
-        argc != NUMBER_OF_ARGS,
+        argc != TS_NUMBER_OF_ARGS,
         "main",
-        ERROR_ARGS
+        TS_ERROR_ARGS
     )) return -1;
 
-    parse_args(argv);
-    show_options(&options);
+    ts_parse_args(argv);
+    ts_show_options(&options);
+    if (!options.valid)
+        SERVER_EXIT(EXIT_FAILURE);
     // init server
     SERVER_INIT();
     if (!config.valid)

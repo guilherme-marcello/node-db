@@ -2,6 +2,7 @@
 
 #include "database.h"
 #include "client_stub.h"
+#include "client_stub-private.h"
 #include "utils.h"
 
 
@@ -41,7 +42,7 @@ int ddb_table_put(struct TableServerDistributedDatabase* ddb, char *key, struct 
 
     if (db_table_put(ddb->db, key, value) == 0 && ddb->replica != NULL) {
         // success. forward to remote table
-        printf("[ \033[1;33mDatabase\033[0m ] - Forwarding operation to replica/next server\n");
+        printf("[ \033[1;33mDatabase\033[0m ] - Forwarding operation to replica/next server (%s:%d)\n", ddb->replica->server_address, ddb->replica->server_port);
         return rtable_put_with_data(ddb->replica, key, value);
     }
     return 0;
