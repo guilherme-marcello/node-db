@@ -21,7 +21,7 @@ ARFLAGS	:= rcs
 SRC_UTILS	:= $(SRCDIR)/utils.c $(SRCDIR)/aptime.c
 OBJ_UTILS	:= $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_UTILS))
 
-SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c $(SRCDIR)/stats.c $(SRCDIR)/replicator.c
+SRC_GENERIC := $(SRCDIR)/data.c $(SRCDIR)/entry.c $(SRCDIR)/list.c $(SRCDIR)/table.c $(SRCDIR)/stats.c $(SRCDIR)/replicator.c $(SRCDIR)/address.c
 OBJ_GENERIC := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC_GENERIC))
 
 SRC_SERVER := $(SRCDIR)/network_server.c $(SRCDIR)/table_skel.c $(SRCDIR)/database.c $(SRCDIR)/distributed_database.c  $(SRCDIR)/client_executor.c $(SRCDIR)/client_stub.c $(SRCDIR)/network_client.c 

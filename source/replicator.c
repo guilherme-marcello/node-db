@@ -3,6 +3,7 @@
 #include "table_server.h"
 #include "client_stub.h"
 #include "database.h"
+#include "address.h"
 #include "distributed_database.h"
 
 #include <pthread.h>
@@ -273,7 +274,9 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
         return;
 
     // 3. create and get node id for this server!
-    replicator->server_node_path = replicator_create_node(replicator->zh, "127.0.0.1", options->listening_port);
+    char* server_address_str = get_ip_address();
+    replicator->server_node_path = replicator_create_node(replicator->zh, server_address_str ? server_address_str : "127.0.0.1", options->listening_port);
+    destroy_dynamic_memory(server_address_str);
     if (replicator->server_node_path == NULL)
         return;
     
