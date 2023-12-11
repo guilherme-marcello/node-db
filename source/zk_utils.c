@@ -139,11 +139,7 @@ char* zk_register_server(zhandle_t* zh, char* host_str, int host_port) {
         destroy_dynamic_memory(generated_path);
         return NULL;
     }
-    printf(
-        "[ \033[1;34mServer Setup\033[0m ] - Successfully registered the server on Zookeeper:\n   - Path: \033[1;36m%s\033[0m\n   - Data: \033[1;36m%s\033[0m\n", 
-        generated_path, node_data
-    );
-
+    printf(ZK_REGISTERED_SERVER, generated_path, node_data);
 
     // return the node path
     return generated_path;
