@@ -189,13 +189,10 @@ int get(char *key) {
     printf("Getting key %s...\n", key);
     // retrieve data from remote table
     struct data_t* data = rtable_get(client.tail_table, key);
-
-    if (assert_error(
-        data == NULL,
-        "get",
-        "Failed to retrieve key from remote table.\n"
-    )) return -1;
-
+    if (data == NULL) {
+        printf("Not found.\n");
+        return -1;
+    }
     printf("Found data for key %s: ", key);
     print_data(data->data, data->datasize);
     data_destroy(data);
