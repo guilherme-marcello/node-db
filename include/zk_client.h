@@ -5,18 +5,12 @@
 
 #include <zookeeper/zookeeper.h>
 
-// Represents the context for updating child nodes
-struct ClientChildUpdateContext {
-    struct TableClientReplicationData* replicator;
-    struct TableClientData* client;
-};
-
 // Represents the replication data for a table client
 struct TableClientReplicationData {
     zhandle_t* zh;                          // ZooKeeper handle
     char* head_node_path;                   // Path of the head node
     char* tail_node_path;                   // Path of the tail node
-    struct ClientChildUpdateContext* child_update_context; // Child update context
+    struct TableClientData* client;         // client data
     int valid;                              // Flag indicating validity
 };
 
@@ -33,19 +27,17 @@ void zk_client_init(struct TableClientReplicationData* replicator, struct TableC
  * @brief Handles the change of the head node in replication.
  * 
  * @param replicator The replication data for the table client.
- * @param client The table client associated with the replication.
  * @param head The path of the new head node.
  */
-void handle_head_change(struct TableClientReplicationData* replicator, struct TableClientData* client, char* head);
+void handle_head_change(struct TableClientReplicationData* replicator, char* head);
 
 /**
  * @brief Handles the change of the tail node in replication.
  * 
  * @param replicator The replication data for the table client.
- * @param client The table client associated with the replication.
  * @param tail The path of the new tail node.
  */
-void handle_tail_change(struct TableClientReplicationData* replicator, struct TableClientData* client, char* tail);
+void handle_tail_change(struct TableClientReplicationData* replicator, char* tail);
 
 /**
  * @brief Watches the children of the ZooKeeper node and triggers updates on changes.
