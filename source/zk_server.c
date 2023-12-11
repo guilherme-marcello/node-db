@@ -75,7 +75,7 @@ void zk_server_child_watcher(zhandle_t* wzh, int type, int state, const char* zp
             handle_next_server_change(replicator, next_node);
         }
     }
-    destroy_dynamic_memory(children_list);
+    zk_free_list(children_list);
 }
 
 void zk_server_init(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, struct TableServerOptions* options) {

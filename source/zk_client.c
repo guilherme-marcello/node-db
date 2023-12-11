@@ -73,7 +73,7 @@ void client_child_watcher(zhandle_t* wzh, int type, int state, const char* zpath
             handle_tail_change(replicator, new_tail);
         }
     }
-    destroy_dynamic_memory(children_list);
+    zk_free_list(children_list);
 }
 
 void zk_client_init(struct TableClientReplicationData* replicator, struct TableClientData* client, struct TableClientOptions* options) {

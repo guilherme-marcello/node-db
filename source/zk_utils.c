@@ -213,8 +213,10 @@ char* zk_find_successor_node(zoo_string* children_list, const char* path, char* 
 struct rtable_t* zk_table_connect(zhandle_t* zh, const char* path) {    
     int size = 32;
     char* node_data = create_dynamic_memory(size * sizeof(char));
-    if (zoo_get(zh, path, 0, node_data, &size, NULL) != ZOK)
+    if (zoo_get(zh, path, 0, node_data, &size, NULL) != ZOK) {
+        destroy_dynamic_memory(node_data);
         return NULL;
+    }
 
     printf("[ \033[1;34mServer Sync\033[0m ] - Establishing remote connection to \033[1;36m%s\033[0m (%s)\n", path, node_data);
     struct rtable_t* table = rtable_connect(node_data);
