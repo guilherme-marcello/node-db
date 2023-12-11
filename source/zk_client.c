@@ -17,7 +17,7 @@ void handle_head_change(struct TableClientReplicationData* replicator, struct Ta
         // head changed!
         if (client->head_table != NULL)
             rtable_disconnect(client->head_table);
-        client->head_table = replicator_get_table(replicator->zh, head);
+        client->head_table = zk_table_connect(replicator->zh, head);
         replicator->head_node_path = head;
         printf("[ \033[1;34mFault Tolerance\033[0m ] - Write server changed: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n", current_head, head);
     }
@@ -35,7 +35,7 @@ void handle_tail_change(struct TableClientReplicationData* replicator, struct Ta
         // tail changed!
         if (client->tail_table != NULL)
             rtable_disconnect(client->tail_table);
-        client->tail_table = replicator_get_table(replicator->zh, tail);
+        client->tail_table = zk_table_connect(replicator->zh, tail);
         replicator->tail_node_path = tail;
         printf("[ \033[1;34mFault Tolerance\033[0m ] - Read server changed: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n", current_tail, tail);
     }
@@ -67,8 +67,8 @@ void client_child_watcher(zhandle_t* wzh, int type, int state, const char* zpath
             )) return;
 
             // get head and tail server
-            char* new_head = replicator_get_head_node(children_list, CHAIN_PATH);
-            char* new_tail = replicator_get_tail_node(children_list, CHAIN_PATH);
+            char* new_head = zk_get_first_child(children_list, CHAIN_PATH);
+            char* new_tail = zk_get_last_child(children_list, CHAIN_PATH);
             handle_head_change(context->replicator, context->client, new_head);
             handle_tail_change(context->replicator, context->client, new_tail);
         }
@@ -84,7 +84,7 @@ void zk_client_init(struct TableClientReplicationData* replicator, struct TableC
     )) return;
 
     // 1. retrieve the token
-    replicator->zh = connect_to_zookeeper(options->zk_connection_str);
+    replicator->zh = zk_connect(options->zk_connection_str);
     if (assert_error(
         replicator->zh == NULL,
         "zk_client_init",
@@ -109,8 +109,8 @@ void zk_client_init(struct TableClientReplicationData* replicator, struct TableC
     }
 
     // get head and tail server
-    char* new_head = replicator_get_head_node(children_list, CHAIN_PATH);
-    char* new_tail = replicator_get_tail_node(children_list, CHAIN_PATH);
+    char* new_head = zk_get_first_child(children_list, CHAIN_PATH);
+    char* new_tail = zk_get_last_child(children_list, CHAIN_PATH);
     handle_head_change(replicator, client, new_head);
     handle_tail_change(replicator, client, new_tail);
 }

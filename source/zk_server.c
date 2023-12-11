@@ -26,12 +26,12 @@ void handle_next_server_change(struct TableServerReplicationData* replicator, st
         } else if (string_compare(current_next_node, next_node) != EQUAL) {
             // if not equal, change the next server
             rtable_disconnect(ddb->replica); // disconnect the current next server
-            ddb->replica = replicator_get_table(replicator->zh, next_node);
+            ddb->replica = zk_table_connect(replicator->zh, next_node);
         }
     } else {
         // handle changes when the current next server is not defined
         if (next_node != NULL) {
-            ddb->replica = replicator_get_table(replicator->zh, next_node);
+            ddb->replica = zk_table_connect(replicator->zh, next_node);
         }
     }
 
@@ -71,7 +71,7 @@ void zk_server_child_watcher(zhandle_t* wzh, int type, int state, const char* zp
             )) return;
 
             // get next server
-            char* next_node = replicator_next_node(children_list, CHAIN_PATH, context->replicator->server_node_path);
+            char* next_node = zk_find_successor_node(children_list, CHAIN_PATH, context->replicator->server_node_path);
             handle_next_server_change(context->replicator, context->ddb, next_node);
         }
     }
@@ -87,18 +87,18 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
     )) return;
 
     // 1. retrieve the token
-    replicator->zh = connect_to_zookeeper(options->zk_connection_str);
+    replicator->zh = zk_connect(options->zk_connection_str);
     if (replicator->zh == NULL)
         return;
 
 
     // 2. make sure that root path is created
-    if (!replicator_create_chain_if_none(replicator->zh, CHAIN_PATH))
+    if (!ensure_chain_exists(replicator->zh, CHAIN_PATH))
         return;
 
     // 3. create and get node id for this server!
     char* server_address_str = get_ip_address();
-    replicator->server_node_path = replicator_create_node(replicator->zh, server_address_str ? server_address_str : "127.0.0.1", options->listening_port);
+    replicator->server_node_path = zk_register_server(replicator->zh, server_address_str ? server_address_str : "127.0.0.1", options->listening_port);
     destroy_dynamic_memory(server_address_str);
     if (replicator->server_node_path == NULL)
         return;
@@ -121,17 +121,17 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
     }
     
     // 5. retrieve next server from zk and setup remote table
-    replicator->next_server_node_path = replicator_next_node(children_list, CHAIN_PATH, replicator->server_node_path);
+    replicator->next_server_node_path = zk_find_successor_node(children_list, CHAIN_PATH, replicator->server_node_path);
     if (replicator->next_server_node_path != NULL) {
         printf("Setting up remote table from %s to %s\n", replicator->server_node_path, replicator->next_server_node_path);
     }
 
     // 6. retrieve prev server from zk and start migration
     printf("[ \033[1;34mServer Sync\033[0m ] - Checking if there is an available server for synchronization...\n");
-    char* prev_server_node_path = replicator_prev_node(children_list, CHAIN_PATH, replicator->server_node_path);
+    char* prev_server_node_path = zk_find_previous_node(children_list, CHAIN_PATH, replicator->server_node_path);
     if (prev_server_node_path != NULL) {
         printf("[ \033[1;34mServer Sync\033[0m ] - Setting up synchronization with server \033[1;36m%s\033[0m\n", prev_server_node_path);
-        struct rtable_t* migration_table = replicator_get_table(replicator->zh, prev_server_node_path);
+        struct rtable_t* migration_table = zk_table_connect(replicator->zh, prev_server_node_path);
         if (migration_table != NULL) {
             printf("[ \033[1;34mServer Sync\033[0m ] - Established temporary remote session to \033[1;36m%s\033[0m. Starting synchronization...\n", prev_server_node_path);
             db_migrate_table(ddb->db, migration_table);

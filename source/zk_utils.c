@@ -8,10 +8,10 @@
 #include <string.h>
 #include <zookeeper/zookeeper.h>
 
-char* replicator_get_head_node(zoo_string* children_list, const char* path) {
+char* zk_get_first_child(zoo_string* children_list, const char* path) {
     if (assert_error(
         children_list == NULL || path == NULL,
-        "replicator_get_head_node",
+        "zk_get_first_child",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
@@ -27,10 +27,10 @@ char* replicator_get_head_node(zoo_string* children_list, const char* path) {
     return head_node;
 }
 
-char* replicator_get_tail_node(zoo_string* children_list, const char* path) {
+char* zk_get_last_child(zoo_string* children_list, const char* path) {
     if (assert_error(
         children_list == NULL || path == NULL,
-        "replicator_get_tail_node",
+        "zk_get_last_child",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
@@ -63,10 +63,10 @@ void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, v
     pthread_mutex_unlock(connection_ctx->mutex);
 }
 
-zhandle_t* connect_to_zookeeper(char* zk_connection_str) {
+zhandle_t* zk_connect(char* zk_connection_str) {
     if (assert_error(
         zk_connection_str == NULL,
-        "connect_to_zookeeper",
+        "zk_connect",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
@@ -83,7 +83,7 @@ zhandle_t* connect_to_zookeeper(char* zk_connection_str) {
     zhandle_t* zh = zookeeper_init(zk_connection_str, connection_watcher, 2000, 0, &connection_ctx, 0);
     if (assert_error(
         zh == NULL,
-        "connect_to_zookeeper",
+        "zk_connect",
         "Error connecting to ZooKeeper server"
     )) {
         pthread_mutex_destroy(&connection_established_mutex);
@@ -102,7 +102,7 @@ zhandle_t* connect_to_zookeeper(char* zk_connection_str) {
     return zh;
 }
 
-int replicator_create_chain_if_none(zhandle_t* zh, const char* path) {
+int ensure_chain_exists(zhandle_t* zh, const char* path) {
     if (zoo_exists(zh, path, 0, NULL) != ZNONODE)
         return 1;
 
@@ -114,13 +114,13 @@ int replicator_create_chain_if_none(zhandle_t* zh, const char* path) {
     return 1;
 }
 
-char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port) {
+char* zk_register_server(zhandle_t* zh, char* host_str, int host_port) {
     printf("[ \033[1;34mServer Setup\033[0m ] - Registering server...\n");
     // alloc mem for the new_path buffer
     char* generated_path = create_dynamic_memory(1024);
     if (assert_error(
         generated_path == NULL,
-        "replicator_create_node",
+        "zk_register_server",
         ERROR_MALLOC
     )) return NULL;
 
@@ -143,10 +143,10 @@ char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port) {
     return generated_path;
 }
 
-char* replicator_prev_node(zoo_string* children_list, const char* path, char* child) {
+char* zk_find_previous_node(zoo_string* children_list, const char* path, char* child) {
     if (assert_error(
         children_list == NULL || path == NULL || child == NULL,
-        "replicator_prev_node",
+        "zk_find_previous_node",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
@@ -171,10 +171,10 @@ char* replicator_prev_node(zoo_string* children_list, const char* path, char* ch
     return antecessor;
 }
 
-char* replicator_next_node(zoo_string* children_list, const char* path, char* child) {
+char* zk_find_successor_node(zoo_string* children_list, const char* path, char* child) {
     if (assert_error(
         children_list == NULL || path == NULL || child == NULL,
-        "replicator_next_node",
+        "zk_find_successor_node",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
@@ -198,7 +198,7 @@ char* replicator_next_node(zoo_string* children_list, const char* path, char* ch
     return successor;
 }
 
-struct rtable_t* replicator_get_table(zhandle_t* zh, const char* path) {    
+struct rtable_t* zk_table_connect(zhandle_t* zh, const char* path) {    
     int size = 32;
     char* node_data = create_dynamic_memory(size * sizeof(char));
     if (zoo_get(zh, path, 0, node_data, &size, NULL) != ZOK)
