@@ -57,11 +57,11 @@ int network_server_init(short port) {
 
 int network_main_loop(int listening_socket, struct TableServerDistributedDatabase* ddb) {
     signal(SIGPIPE, SIG_IGN);
-    printf("Server ready, waiting for connections\n");
+    printf("[ \033[1;32mServer Status\033[0m ] - Server ready, waiting for connections\n");
     while (true) {
         int client_socket = get_client(listening_socket);
         if (client_socket == -1) {
-            printf("Failed to accept client connection.\n");
+            printf("[ \033[1;31mError\033[0m ] - Failed to accept client connection\n");
             continue;
         }
 
@@ -86,17 +86,16 @@ void process_request(int connection_socket, struct TableServerDistributedDatabas
     MessageT *request = network_receive(connection_socket);
 
     if (request != NULL) {
-        printf("Request received!\n");
+        printf("[ \033[1;36mInfo\033[0m ] - Request received!\n");
         // invoke process...
         if (invoke(request, ddb) == -1) {
             message_t__free_unpacked(request, NULL);
         } else {
             // send response...
-            printf("Sending response....\n");
             if (network_send(connection_socket, request) == -1) {
                 message_t__free_unpacked(request, NULL);
             } else {
-                printf("Sent response to the client! Waiting for the next request...\n");
+                printf("[ \033[1;36mInfo\033[0m ] - Sent response to the client! Waiting for the next request...\n");
                 message_t__free_unpacked(request, NULL);
                 process_request(connection_socket, ddb);  // use recursion to process next request...
             }

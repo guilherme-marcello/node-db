@@ -232,7 +232,7 @@ int db_migrate_table(struct TableServerDatabase* db, struct rtable_t* migration_
     int index = 0;
     struct entry_t* entry;
     while ((entry = entries[index])) {
-        printf("<...> Migrating %s : ", entry->key);
+        printf("[ \033[1;35mMigration\033[0m ] - Migrating %s : ", entry->key);
         print_data(entry->value->data, entry->value->datasize);
         db_table_put(db, entry->key, entry->value);
         index++;

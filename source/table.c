@@ -197,7 +197,7 @@ char **table_get_keys(struct table_t *table) {
     // retrive table size
     int size = table_size(table);
     if (assert_error(
-        size <= 0,
+        size < 0,
         "table_get_keys",
         ERROR_SIZE
     )) return NULL;

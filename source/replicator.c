@@ -48,7 +48,7 @@ void handle_next_server_change(struct TableServerReplicationData* replicator, st
         }
     }
 
-    printf("Next server change: (%s) -> (%s)\n", current_next_node ? current_next_node : "None", next_node ? next_node : "None");
+    printf("[ \033[1;34mServer Replication\033[0m ] - Next server change: (\033[1;36m%s\033[0m) -> (\033[1;36m%s\033[0m)\n", current_next_node ? current_next_node : "None", next_node ? next_node : "None");
 
     // clean up memory
     if (current_next_node != NULL)
@@ -159,6 +159,7 @@ int replicator_create_chain_if_none(zhandle_t* zh, const char* path) {
 }
 
 char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port) {
+    printf("[ \033[1;34mServer Setup\033[0m ] - Registering server...\n");
     // alloc mem for the new_path buffer
     char* generated_path = create_dynamic_memory(1024);
     if (assert_error(
@@ -176,8 +177,11 @@ char* replicator_create_node(zhandle_t* zh, char* host_str, int host_port) {
         destroy_dynamic_memory(generated_path);
         return NULL;
     }
+    printf(
+        "[ \033[1;34mServer Setup\033[0m ] - Successfully registered the server on Zookeeper:\n   - Path: \033[1;36m%s\033[0m\n   - Data: \033[1;36m%s\033[0m\n", 
+        generated_path, node_data)
+    ;
 
-    printf("Server node created! Node path: %s with data = %s\n", generated_path, node_data);
 
     // return the node path
     return generated_path;
@@ -244,13 +248,14 @@ struct rtable_t* replicator_get_table(struct TableServerReplicationData* replica
     if (zoo_get(replicator->zh, path, 0, node_data, &size, NULL) != ZOK)
         return NULL;
 
-    printf("Node data for %s is %s!\n", path, node_data);
+    printf("[ \033[1;34mServer Sync\033[0m ] - Establishing remote connection to \033[1;36m%s\033[0m (%s)\n", path, node_data);
     struct rtable_t* table = rtable_connect(node_data);
     destroy_dynamic_memory(node_data);
     return table;    
 }
 
 void replicator_init(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, struct TableServerOptions* options) {
+    zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     if (assert_error(
         replicator == NULL || ddb == NULL || ddb->db == NULL || options == NULL || options->zk_connection_str == NULL,
         "replicator_init",
@@ -261,6 +266,7 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
     replicator->zh = connect_to_zookeeper(options->zk_connection_str);
     if (replicator->zh == NULL)
         return;
+
 
     // 2. make sure that root path is created
     if (!replicator_create_chain_if_none(replicator->zh, CHAIN_PATH))
@@ -294,17 +300,19 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
     }
 
     // 6. retrieve prev server from zk and start migration
+    printf("[ \033[1;34mServer Sync\033[0m ] - Checking if there is an available server for synchronization...\n");
     char* prev_server_node_path = replicator_prev_node(children_list, CHAIN_PATH, replicator->server_node_path);
-    printf("Prev server is %s\n", prev_server_node_path);
     if (prev_server_node_path != NULL) {
-        printf("Setting up merge from %s to %s\n", prev_server_node_path, replicator->server_node_path);
+        printf("[ \033[1;34mServer Sync\033[0m ] - Setting up synchronization with server \033[1;36m%s\033[0m\n", prev_server_node_path);
         struct rtable_t* migration_table = replicator_get_table(replicator, prev_server_node_path);
         if (migration_table != NULL) {
+            printf("[ \033[1;34mServer Sync\033[0m ] - Established temporary remote session to \033[1;36m%s\033[0m. Starting synchronization...\n", prev_server_node_path);
             db_migrate_table(ddb->db, migration_table);
             rtable_disconnect(migration_table);
             destroy_dynamic_memory(prev_server_node_path);
-        }       
+        }
     }
+    printf("[ \033[1;34mServer Sync\033[0m ] - Completed synchronization with other servers (if any)\n");
 
     // free list
     for (int j = 0; j < children_list->count; j++) {
@@ -314,7 +322,6 @@ void replicator_init(struct TableServerReplicationData* replicator, struct Table
     destroy_dynamic_memory(children_list);
 
     replicator->valid = 1;
-    printf("Successfully initialized Replicator!\n");
 }
 
 void replicator_destroy(struct TableServerReplicationData* replicator) {

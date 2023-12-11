@@ -27,28 +27,28 @@ int invoke(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
 
     switch (msg->opcode) {
         case MESSAGE_T__OPCODE__OP_PUT:
-            printf("Received %s request!\n", "put");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "put");
             return put(msg, ddb);        
         case MESSAGE_T__OPCODE__OP_GET:
-            printf("Received %s request!\n", "get");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "get");
             return get(msg, ddb);
         case MESSAGE_T__OPCODE__OP_DEL:
-            printf("Received %s request!\n", "del");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "del");
             return del(msg, ddb);
         case MESSAGE_T__OPCODE__OP_SIZE:
-            printf("Received %s request!\n", "size");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "size");
             return size(msg, ddb);
         case MESSAGE_T__OPCODE__OP_GETKEYS:
-            printf("Received %s request!\n", "getkeys");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "getkeys");
             return getkeys(msg, ddb);
         case MESSAGE_T__OPCODE__OP_GETTABLE:
-            printf("Received %s request!\n", "gettable");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "gettable");
             return gettable(msg, ddb);
         case MESSAGE_T__OPCODE__OP_STATS:
-            printf("Received %s request!\n", "stats");
+            printf("[ \033[1;36mInfo\033[0m ] - Received %s request! Sending response...\n", "stats");
             return stats(msg, ddb);
         default:
-            printf("Received unknown request...ignoring!\n");
+            printf("[ \033[1;36mInfo\033[0m ] - Received unknown request... ignoring!\n");
             return error(msg);
     }
     return 0;
@@ -250,14 +250,14 @@ int gettable(MessageT* msg, struct TableServerDistributedDatabase* ddb) {
     if (assert_error(
         keys == NULL,
         "invoke",
-        ERROR_MALLOC
+        "Failed to get keys from table.\n"
     )) return error(msg);
 
     int n_entries = ddb_table_size(ddb);
     if (assert_error(
         n_entries < 0,
         "invoke",
-        ERROR_MALLOC
+        "Failed to get size of table.\n"
     )) {
         table_free_keys(keys);
         return error(msg);

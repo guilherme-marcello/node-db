@@ -28,9 +28,9 @@ void* thread_process_request(void* _args) {
     destroy_dynamic_memory(args);
 
     db_increment_active_clients(ddb->db);
-    printf("Client connection established.\n");
+    printf("[ \033[1;36mInfo\033[0m ] - Client connection established\n");
     process_request(client_socket, ddb);
-    printf("Client connection closed.\n");
+    printf("[ \033[1;36mInfo\033[0m ] - Client connection closed\n");
     db_decrement_active_clients(ddb->db);
     close(client_socket);
     pthread_exit(NULL);
