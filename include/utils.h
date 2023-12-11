@@ -49,6 +49,9 @@ void print_data(void* ptr, int size);
  */
 enum ComparisonStatus string_compare(char* str1, char* str2);
 
+// Helper function to compare strings for qsort
+int sort_string_helper(const void *a, const void *b);
+
 /* Função que liberta uma zona de memória dada pelo apontador, se este nao for nulo
 */
 void safe_free(void* ptr);

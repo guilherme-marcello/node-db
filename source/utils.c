@@ -18,6 +18,11 @@ enum ComparisonStatus string_compare(char* str1, char* str2) {
     return EQUAL;
 }
 
+// Helper function to compare strings for qsort
+int sort_string_helper(const void *a, const void *b) {
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
 void print_data(void* ptr, int size) {
     char str_buffer[size + 1];
     str_buffer[size] = '\0';

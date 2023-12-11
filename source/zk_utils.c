@@ -15,6 +15,9 @@ char* zk_get_first_child(zoo_string* children_list, const char* path) {
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
+    // sort!
+    qsort(children_list->data, children_list->count, sizeof(char*), sort_string_helper);
+
     char* head_node = NULL;
     if (children_list->count > 0) {
         // construct the full path of the head node
@@ -33,6 +36,9 @@ char* zk_get_last_child(zoo_string* children_list, const char* path) {
         "zk_get_last_child",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
+
+    // sort!
+    qsort(children_list->data, children_list->count, sizeof(char*), sort_string_helper);
 
     char* tail_node = NULL;
     if (children_list->count > 0) {
