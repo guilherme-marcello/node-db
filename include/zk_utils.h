@@ -91,4 +91,11 @@ char* zk_get_first_child(zoo_string* children_list, const char* path);
  */
 char* zk_get_last_child(zoo_string* children_list, const char* path);
 
+/**
+ * @brief Free the memory used by the given list
+ * 
+ * @param list The list
+ */
+void zk_free_list(zoo_string* list);
+
 #endif

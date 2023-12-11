@@ -156,6 +156,9 @@ char* zk_find_previous_node(zoo_string* children_list, const char* path, char* c
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
 
+    // sort!
+    qsort(children_list->data, children_list->count, sizeof(char*), sort_string_helper);
+
     // look after antecessor!
     char* antecessor = NULL;
     for (int i = 0; i < children_list->count; ++i) {
@@ -183,6 +186,9 @@ char* zk_find_successor_node(zoo_string* children_list, const char* path, char* 
         "zk_find_successor_node",
         ERROR_NULL_POINTER_REFERENCE
     )) return NULL;
+
+    // sort!
+    qsort(children_list->data, children_list->count, sizeof(char*), sort_string_helper);
 
     // look after sucessor!
     char* successor = NULL;
@@ -214,4 +220,13 @@ struct rtable_t* zk_table_connect(zhandle_t* zh, const char* path) {
     struct rtable_t* table = rtable_connect(node_data);
     destroy_dynamic_memory(node_data);
     return table;    
+}
+
+void zk_free_list(zoo_string* list) {
+    // free list
+    for (int j = 0; j < list->count; j++) {
+        destroy_dynamic_memory(list->data[j]);
+    }
+    destroy_dynamic_memory(list->data);
+    destroy_dynamic_memory(list);
 }
