@@ -7,18 +7,12 @@
 
 #include <zookeeper/zookeeper.h>
 
-// Represents the context for updating child nodes
-struct ServerChildUpdateContext {
-    struct TableServerReplicationData* replicator;
-    struct TableServerDistributedDatabase* ddb;
-};
-
 // Represents the replication data for a table server
 struct TableServerReplicationData {
     zhandle_t* zh;                          // ZooKeeper handle
     char* server_node_path;                 // Path of the server node
     char* next_server_node_path;            // Path of the next server node
-    struct ServerChildUpdateContext* child_update_context; // Child update context
+    struct TableServerDistributedDatabase* ddb; // datatabse
     int valid;                              // Flag indicating validity
 };
 
@@ -26,10 +20,9 @@ struct TableServerReplicationData {
  * @brief Handles the change of the next server in replication.
  * 
  * @param replicator The replication data for the table server.
- * @param ddb The distributed database associated with the table server.
  * @param next_node The path of the next server node.
  */
-void handle_next_server_change(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, char* next_node);
+void handle_next_server_change(struct TableServerReplicationData* replicator, char* next_node);
 
 /**
  * @brief Watches the children of the ZooKeeper node and triggers updates on changes.

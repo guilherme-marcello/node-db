@@ -8,9 +8,9 @@
 
 #include <zookeeper/zookeeper.h>
 
-void handle_next_server_change(struct TableServerReplicationData* replicator, struct TableServerDistributedDatabase* ddb, char* next_node) {
+void handle_next_server_change(struct TableServerReplicationData* replicator, char* next_node) {
     if (assert_error(
-        replicator == NULL || ddb == NULL,
+        replicator == NULL || replicator->ddb == NULL,
         "handle_next_server_change",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
@@ -21,17 +21,17 @@ void handle_next_server_change(struct TableServerReplicationData* replicator, st
         // handle changes when the current next server is defined
         if (next_node == NULL) {
             // this server is now the tail! disconnect the current table
-            rtable_disconnect(ddb->replica);
-            ddb->replica = NULL;
+            rtable_disconnect(replicator->ddb->replica);
+            replicator->ddb->replica = NULL;
         } else if (string_compare(current_next_node, next_node) != EQUAL) {
             // if not equal, change the next server
-            rtable_disconnect(ddb->replica); // disconnect the current next server
-            ddb->replica = zk_table_connect(replicator->zh, next_node);
+            rtable_disconnect(replicator->ddb->replica); // disconnect the current next server
+            replicator->ddb->replica = zk_table_connect(replicator->zh, next_node);
         }
     } else {
         // handle changes when the current next server is not defined
         if (next_node != NULL) {
-            ddb->replica = zk_table_connect(replicator->zh, next_node);
+            replicator->ddb->replica = zk_table_connect(replicator->zh, next_node);
         }
     }
 
@@ -46,7 +46,7 @@ void handle_next_server_change(struct TableServerReplicationData* replicator, st
 
 void zk_server_child_watcher(zhandle_t* wzh, int type, int state, const char* zpath, void* watcher_ctx) {
     // parse context to update next server pointer!
-    struct ServerChildUpdateContext* context = (struct ServerChildUpdateContext*)watcher_ctx;
+    struct TableServerReplicationData* replicator = (struct TableServerReplicationData*)watcher_ctx;
 
     // alloc mem for children buffer
     zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
@@ -61,7 +61,7 @@ void zk_server_child_watcher(zhandle_t* wzh, int type, int state, const char* zp
             /* Get the updated children and reset the watch */ 
             if (assert_error(
                 zoo_wget_children(
-                    context->replicator->zh, 
+                    wzh, 
                     CHAIN_PATH, 
                     zk_server_child_watcher, 
                     watcher_ctx, 
@@ -71,8 +71,8 @@ void zk_server_child_watcher(zhandle_t* wzh, int type, int state, const char* zp
             )) return;
 
             // get next server
-            char* next_node = zk_find_successor_node(children_list, CHAIN_PATH, context->replicator->server_node_path);
-            handle_next_server_change(context->replicator, context->ddb, next_node);
+            char* next_node = zk_find_successor_node(children_list, CHAIN_PATH, replicator->server_node_path);
+            handle_next_server_change(replicator, next_node);
         }
     }
     destroy_dynamic_memory(children_list);
@@ -85,6 +85,8 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
         "replicator_init",
         ERROR_NULL_POINTER_REFERENCE
     )) return;
+
+    replicator->ddb = ddb;
 
     // 1. retrieve the token
     replicator->zh = zk_connect(options->zk_connection_str);
@@ -104,11 +106,6 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
         return;
     
     // 4. watch /chain children
-    struct ServerChildUpdateContext* watch_context = create_dynamic_memory(sizeof(struct ServerChildUpdateContext));
-    replicator->child_update_context = watch_context;
-    watch_context->ddb = ddb;
-    watch_context->replicator = replicator;
-
     zoo_string* children_list = (zoo_string *)create_dynamic_memory(sizeof(zoo_string));
     if (assert_error(
         children_list == NULL,
@@ -116,7 +113,7 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
         ERROR_MALLOC
     )) return;
 
-    if (ZOK != zoo_wget_children(replicator->zh, CHAIN_PATH, zk_server_child_watcher, watch_context, children_list)) {
+    if (ZOK != zoo_wget_children(replicator->zh, CHAIN_PATH, zk_server_child_watcher, replicator, children_list)) {
         fprintf(stderr, "Error setting watch at %s!\n", CHAIN_PATH);
     }
     
@@ -140,14 +137,8 @@ void zk_server_init(struct TableServerReplicationData* replicator, struct TableS
         }
     }
     printf("[ \033[1;34mServer Sync\033[0m ] - Completed synchronization with other servers (if any)\n");
-
     // free list
-    for (int j = 0; j < children_list->count; j++) {
-        destroy_dynamic_memory(children_list->data[j]);
-    }
-    destroy_dynamic_memory(children_list->data);
-    destroy_dynamic_memory(children_list);
-
+    zk_free_list(children_list);
     replicator->valid = 1;
 }
 
@@ -161,6 +152,5 @@ void zk_server_destroy(struct TableServerReplicationData* replicator) {
 
     destroy_dynamic_memory(replicator->server_node_path);
     destroy_dynamic_memory(replicator->next_server_node_path);
-    destroy_dynamic_memory(replicator->child_update_context);
     zookeeper_close(replicator->zh);
 }
