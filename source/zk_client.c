@@ -77,6 +77,7 @@ void client_child_watcher(zhandle_t* wzh, int type, int state, const char* zpath
 }
 
 void zk_client_init(struct TableClientReplicationData* replicator, struct TableClientData* client, struct TableClientOptions* options) {
+    zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
     if (assert_error(
         replicator == NULL || client == NULL || options == NULL,
         "zk_client_init",
